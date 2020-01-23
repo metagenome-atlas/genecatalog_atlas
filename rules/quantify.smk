@@ -8,7 +8,7 @@ rule align_reads_to_Genecatalog:
         input = lambda wc, input : input_params_for_bbwrap( input.reads),
         maxsites = 4,
         ambiguous = 'all',
-        minid = config['genecatalog']['minid'],
+        minid = config['minid'],
         maxindel = 1 # default 16000 good for genome deletions but not necessarily for alignment to contigs
     shadow:
         "shallow"

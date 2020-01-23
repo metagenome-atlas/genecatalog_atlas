@@ -30,7 +30,7 @@ rule filter_genes:
     threads:
         1
     params:
-        min_length=config['genecatalog']['minlength']
+        min_length=config['minlength']
     run:
         from Bio import SeqIO
         faa = SeqIO.parse(input.faa,'fasta')
@@ -61,10 +61,10 @@ rule cluster_genes:
         config.get("threads", 1)
     params:
         tmpdir= os.path.join(config['tmpdir'],"mmseqs"),
-        clustermethod = 'linclust' if config['genecatalog']['clustermethod']=='linclust' else 'cluster',
-        coverage=config['genecatalog']['coverage'], #0.8,
-        minid=config['genecatalog']['minid'], # 0.00
-        extra=config['genecatalog']['extra'],
+        clustermethod = 'linclust' if config['clustermethod']=='linclust' else 'cluster',
+        coverage=config['coverage'], #0.8,
+        minid=config['minid'], # 0.00
+        extra=config['extra'],
         clusterdb= lambda wc, output: os.path.join(output.clusterdb,'clusterdb'),
         db=lambda wc, output: os.path.join(output.db,'inputdb')
     shell:

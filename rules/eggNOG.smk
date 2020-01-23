@@ -108,7 +108,7 @@ checkpoint gene_subsets:
     output:
         directory("Genecatalog/subsets/genes")
     params:
-        subset_size=config['genecatalog']['SubsetSize'],
+        subset_size=config['SubsetSize'],
     run:
         from utils import fasta
         fasta.split(input[0],params.subset_size,output[0],simplify_headers=True)
