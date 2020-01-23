@@ -1,0 +1,8 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - bbmap=37.*
+  - pigz
+  - bzip2=1.0.*

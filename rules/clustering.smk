@@ -54,7 +54,7 @@ rule cluster_genes:
         db=temp(directory("Genecatalog/all_genes/predicted_genes")),
         clusterdb = temp(directory("Genecatalog/clustering/mmseqs"))
     conda:
-        "%s/mmseqs.yaml" % CONDAENV
+        "../envs/mmseqs.yaml"
     log:
         "logs/Genecatalog/clustering/cluster_proteins.log"
     threads:
@@ -89,7 +89,7 @@ rule get_rep_proteins:
         rep_seqs_db = temp(directory("Genecatalog/protein_catalog")),
         rep_seqs = temp("Genecatalog/representatives_of_clusters.fasta")
     conda:
-        "%s/mmseqs.yaml" % CONDAENV
+        "../envs/mmseqs.yaml"
     log:
         "logs/Genecatalog/clustering/get_rep_proteins.log"
     threads:

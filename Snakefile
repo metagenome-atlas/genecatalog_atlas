@@ -18,6 +18,6 @@ rule all:
 
 DBDIR = os.path.realpath(config["database_dir"])
 EGGNOG_DIR = os.path.join(DBDIR,'EggNOGV2')
-CONDAENV = "../envs"
+
 
 include: "rules/other.smk"

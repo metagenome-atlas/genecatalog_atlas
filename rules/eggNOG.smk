@@ -64,7 +64,7 @@ rule eggNOG_homology_search:
     threads:
         config["threads"]
     conda:
-        "%s/eggNOG.yaml" % CONDAENV
+        "../envs/eggNOG.yaml"
     log:
         "{folder}/logs/{prefix}/eggNOG_homology_search_diamond.log"
     shell:
@@ -90,7 +90,7 @@ rule eggNOG_annotation:
     resources:
         mem=20
     conda:
-        "%s/eggNOG.yaml" % CONDAENV
+        "../envs/eggNOG.yaml"
     log:
         "{folder}/logs/{prefix}/eggNOG_annotate_hits_table.log"
     shell:

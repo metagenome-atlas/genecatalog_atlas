@@ -1,3 +1,5 @@
+JAVA_MEM_FRACTION=0.85
+
 rule align_reads_to_Genecatalog:
     input:
         reads=get_quality_controlled_reads,
@@ -15,7 +17,7 @@ rule align_reads_to_Genecatalog:
     log:
         "logs/Genecatalog/alignment/{sample}_map.log"
     conda:
-        "%s/required_packages.yaml" % CONDAENV
+        "../envs/bbmap.yaml"
     threads:
         config.get("threads", 1)
     resources:
@@ -56,7 +58,7 @@ rule pileup_Genecatalog:
     log:
         "logs/Genecatalog/alignment/{sample}_pileup.log"
     conda:
-        "%s/required_packages.yaml" % CONDAENV
+        "../envs/bbmap.yaml"
     threads:
         config.get("threads", 1)
     resources:
