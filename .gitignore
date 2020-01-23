@@ -1,6 +1,7 @@
 *
 !scripts
 !scripts/*
+!scripts/utils/*
 !scripts/common
 !scripts/common/*
 scripts/.snakemake*
