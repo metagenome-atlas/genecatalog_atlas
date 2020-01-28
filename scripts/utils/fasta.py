@@ -7,7 +7,8 @@ def _make_test_fasta(test_file='test_ABC.fasta'):
         for Number,Letter in enumerate("ATCG"):
             f.write(f'>contig_{Number+1} description\n{Letter}\n')
 
-
+def str2multiline(long_string,line_length=80):
+    return [long_string[i:i+line_length]   for i in range(0,len(long_string),line_length)]
 
 
 def count_Nseq(fasta_file):

@@ -2,54 +2,32 @@ import os
 
 
 
-# localrules: concat_genes
-# rule concat_genes:
-#     input:
-#         faa= expand("{sample}/annotation/predicted_genes/{sample}.faa", sample=SAMPLES),
-#         fna= expand("{sample}/annotation/predicted_genes/{sample}.fna", sample=SAMPLES)
-#     output:
-#         faa=  temp("genecatalog/all_genes_unfiltered.faa"),
-#         fna = temp("genecatalog/all_genes_unfiltered.fna"),
-#     run:
-#         from utils.io import cat_files
-#         cat_files(input.faa,output.faa)
-#         cat_files(input.fna,output.fna)
-#
-#
-
-
-
 localrules: filter_genes
 rule filter_genes:
     input:
-        fna=config['input_fna'],
         faa=config['input_faa']
     output:
-        fna= "genecatalog/all_genes/predicted_genes.fna",
-        faa= "genecatalog/all_genes/predicted_genes.faa",
+        faa= "genecatalog/all_genes/filtered_genes.faa",
     threads:
         1
     params:
-        min_length=config['minlength_nt']
+        min_length=config['minlength']
     run:
-        from Bio import SeqIO
-        faa = SeqIO.parse(input.faa,'fasta')
-        fna = SeqIO.parse(input.fna,'fasta')
+        import pyfastx
 
-        with open(output.faa,'w') as out_faa, open(output.fna,'w') as out_fna:
-
-            for gene in fna:
-                protein = next(faa)
-
+        fa = pyfastx.Fasta(input[0])
+        with open(output.faa,'w') as out_faa:
+            for gene in fa:
                 if len(gene) >= params.min_length:
-                    SeqIO.write(gene,out_fna,'fasta')
-                    SeqIO.write(protein,out_faa,'fasta')
+                    out_faa.write(gene.raw)
+
+        os.remove(fa.file_name+'.fxi')
 
 
 
 rule cluster_genes:
     input:
-        faa= "genecatalog/all_genes/predicted_genes.faa"
+        faa= "genecatalog/all_genes/filtered_genes.faa"
     output:
         db=temp(directory("genecatalog/all_genes/predicted_genes")),
         clusterdb = temp(directory("genecatalog/clustering/mmseqs"))
@@ -139,34 +117,24 @@ rule orf2gene:
 localrules: rename_gene_catalog
 rule rename_gene_catalog:
     input:
-        fna = "genecatalog/all_genes/predicted_genes.fna",
-        faa= "genecatalog/all_genes/predicted_genes.faa",
         orf2gene = "genecatalog/clustering/orf2gene.tsv.gz",
         representatives= "genecatalog/representatives_of_clusters.fasta"
     output:
-        fna= "genecatalog/gene_catalog.fna",
-        faa= "genecatalog/gene_catalog.faa",
+        temp("genecatalog/representatives_of_clusters.fasta.fxi"),
+        faa= "genecatalog/gene_catalog.faa"
     run:
         import pandas as pd
-        from Bio import SeqIO
+        import pyfastx
+        from utils.fasta import str2multiline
 
-        representatives= []
-        with open(input.representatives) as fasta:
-            for line in fasta:
-                if line[0]=='>': representatives.append(line[1:].split()[0])
+        fa = pyfastx.Fasta(input.representatives)
+
+        representatives= fa.keys()
 
         map_names= pd.read_csv(input.orf2gene,index_col=0,sep='\t').loc[representatives,'Gene']
 
-        # rename fna
-        faa_parser = SeqIO.parse(input.faa,'fasta')
-        fna_parser = SeqIO.parse(input.fna,'fasta')
-
-        with open(output.fna,'w') as fna, open(output.faa,'w') as faa :
-            for gene in fna_parser:
-                protein = next(faa_parser)
-                if gene.name in map_names.index:
-                    gene.id = map_names[gene.name]
-                    protein.id = map_names[protein.name]
-
-                    SeqIO.write(gene,fna,'fasta')
-                    SeqIO.write(protein,faa,'fasta')
+        with open(output.faa,'w') as outf:
+            for gene in fa:
+                new_name= map_names[gene.name]
+                lines='\n'.join(str2multiline(gene.seq))
+                outf.write(">{new_name} {gene.description}\n{lines}\n")
