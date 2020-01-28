@@ -104,9 +104,9 @@ rule eggNOG_annotation:
 localrules: gene_subsets,combine_egg_nogg_annotations
 checkpoint gene_subsets:
     input:
-        "Genecatalog/gene_catalog.faa"
+        "genecatalog/gene_catalog.faa"
     output:
-        directory("Genecatalog/subsets/genes")
+        directory("genecatalog/subsets/genes")
     params:
         subset_size=config['SubsetSize'],
     run:
@@ -117,23 +117,23 @@ checkpoint gene_subsets:
 def combine_genecatalog_annotations_input(wildcards):
     dir_for_subsets = checkpoints.gene_subsets.get(**wildcards).output[0]
     Subset_names,= glob_wildcards(os.path.join(dir_for_subsets, "{subset}.faa"))
-    return expand("Genecatalog/subsets/genes/{subset}.emapper.annotations",
+    return expand("genecatalog/subsets/genes/{subset}.emapper.annotations",
                   subset=Subset_names)
 
 rule combine_egg_nogg_annotations:
     input:
         combine_genecatalog_annotations_input
     output:
-        temp("Genecatalog/annotations/eggNog.emapper.annotations")
+        temp("genecatalog/annotations/eggNog.emapper.annotations")
     shell:
         "cat {input} > {output}"
 
 localrules: add_eggNOG_header
 rule add_eggNOG_header:
     input:
-        "Genecatalog/annotations/eggNog.emapper.annotations"
+        "genecatalog/annotations/eggNog.emapper.annotations"
     output:
-        "Genecatalog/annotations/eggNog.tsv.gz"
+        "genecatalog/annotations/eggNog.tsv.gz"
     run:
         import pandas as pd
 

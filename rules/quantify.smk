@@ -1,11 +1,11 @@
 JAVA_MEM_FRACTION=0.85
 
-rule align_reads_to_Genecatalog:
+rule align_reads_to_genecatalog:
     input:
         reads=get_quality_controlled_reads,
-        fasta = "Genecatalog/gene_catalog.fna",
+        fasta = "genecatalog/gene_catalog.fna",
     output:
-        sam = temp("Genecatalog/alignments/{sample}.sam")
+        sam = temp("genecatalog/alignments/{sample}.sam")
     params:
         input = lambda wc, input : input_params_for_bbwrap( input.reads),
         maxsites = 4,
@@ -15,7 +15,7 @@ rule align_reads_to_Genecatalog:
     shadow:
         "shallow"
     log:
-        "logs/Genecatalog/alignment/{sample}_map.log"
+        "logs/genecatalog/alignment/{sample}_map.log"
     conda:
         "../envs/bbmap.yaml"
     threads:
@@ -46,17 +46,17 @@ rule align_reads_to_Genecatalog:
         """
 
 
-rule pileup_Genecatalog:
+rule pileup_genecatalog:
     input:
-        sam = "Genecatalog/alignments/{sample}.sam",
-        bam = "Genecatalog/alignments/{sample}.bam"
+        sam = "genecatalog/alignments/{sample}.sam",
+        bam = "genecatalog/alignments/{sample}.bam"
     output:
-        covstats = temp("Genecatalog/alignments/{sample}_coverage.tsv"),
-        basecov = temp("Genecatalog/alignments/{sample}_base_coverage.txt.gz"),
+        covstats = temp("genecatalog/alignments/{sample}_coverage.tsv"),
+        basecov = temp("genecatalog/alignments/{sample}_base_coverage.txt.gz"),
     params:
         pileup_secondary = 't' # a read maay map to different genes
     log:
-        "logs/Genecatalog/alignment/{sample}_pileup.log"
+        "logs/genecatalog/alignment/{sample}_pileup.log"
     conda:
         "../envs/bbmap.yaml"
     threads:
@@ -77,11 +77,11 @@ rule pileup_Genecatalog:
 localrules: combine_gene_coverages
 rule combine_gene_coverages:
     input:
-        covstats = expand("Genecatalog/alignments/{sample}_coverage.tsv",
+        covstats = expand("genecatalog/alignments/{sample}_coverage.tsv",
             sample=SAMPLES)
     output:
-        "Genecatalog/counts/median_coverage.tsv.gz",
-        "Genecatalog/counts/Nmapped_reads.tsv.gz",
+        "genecatalog/counts/median_coverage.tsv.gz",
+        "genecatalog/counts/Nmapped_reads.tsv.gz",
     run:
 
         import pandas as pd

@@ -2,35 +2,35 @@ import os
 
 
 
-localrules: concat_genes
-rule concat_genes:
-    input:
-        faa= expand("{sample}/annotation/predicted_genes/{sample}.faa", sample=SAMPLES),
-        fna= expand("{sample}/annotation/predicted_genes/{sample}.fna", sample=SAMPLES)
-    output:
-        faa=  temp("Genecatalog/all_genes_unfiltered.faa"),
-        fna = temp("Genecatalog/all_genes_unfiltered.fna"),
-    run:
-        from utils.io import cat_files
-        cat_files(input.faa,output.faa)
-        cat_files(input.fna,output.fna)
-
-
+# localrules: concat_genes
+# rule concat_genes:
+#     input:
+#         faa= expand("{sample}/annotation/predicted_genes/{sample}.faa", sample=SAMPLES),
+#         fna= expand("{sample}/annotation/predicted_genes/{sample}.fna", sample=SAMPLES)
+#     output:
+#         faa=  temp("genecatalog/all_genes_unfiltered.faa"),
+#         fna = temp("genecatalog/all_genes_unfiltered.fna"),
+#     run:
+#         from utils.io import cat_files
+#         cat_files(input.faa,output.faa)
+#         cat_files(input.fna,output.fna)
+#
+#
 
 
 
 localrules: filter_genes
 rule filter_genes:
     input:
-        fna="Genecatalog/all_genes_unfiltered.fna",
-        faa="Genecatalog/all_genes_unfiltered.faa"
+        fna=config['input_fna'],
+        faa=config['input_faa']
     output:
-        fna= "Genecatalog/all_genes/predicted_genes.fna",
-        faa= "Genecatalog/all_genes/predicted_genes.faa",
+        fna= "genecatalog/all_genes/predicted_genes.fna",
+        faa= "genecatalog/all_genes/predicted_genes.faa",
     threads:
         1
     params:
-        min_length=config['minlength']
+        min_length=config['minlength_nt']
     run:
         from Bio import SeqIO
         faa = SeqIO.parse(input.faa,'fasta')
@@ -49,14 +49,14 @@ rule filter_genes:
 
 rule cluster_genes:
     input:
-        faa= "Genecatalog/all_genes/predicted_genes.faa"
+        faa= "genecatalog/all_genes/predicted_genes.faa"
     output:
-        db=temp(directory("Genecatalog/all_genes/predicted_genes")),
-        clusterdb = temp(directory("Genecatalog/clustering/mmseqs"))
+        db=temp(directory("genecatalog/all_genes/predicted_genes")),
+        clusterdb = temp(directory("genecatalog/clustering/mmseqs"))
     conda:
         "../envs/mmseqs.yaml"
     log:
-        "logs/Genecatalog/clustering/cluster_proteins.log"
+        "logs/genecatalog/clustering/cluster_proteins.log"
     threads:
         config.get("threads", 1)
     params:
@@ -85,13 +85,13 @@ rule get_rep_proteins:
         db= rules.cluster_genes.output.db,
         clusterdb = rules.cluster_genes.output.clusterdb,
     output:
-        cluster_attribution = temp("Genecatalog/orf2gene_oldnames.tsv"),
-        rep_seqs_db = temp(directory("Genecatalog/protein_catalog")),
-        rep_seqs = temp("Genecatalog/representatives_of_clusters.fasta")
+        cluster_attribution = temp("genecatalog/orf2gene_oldnames.tsv"),
+        rep_seqs_db = temp(directory("genecatalog/protein_catalog")),
+        rep_seqs = temp("genecatalog/representatives_of_clusters.fasta")
     conda:
         "../envs/mmseqs.yaml"
     log:
-        "logs/Genecatalog/clustering/get_rep_proteins.log"
+        "logs/genecatalog/clustering/get_rep_proteins.log"
     threads:
         config.get("threads", 1)
     params:
@@ -111,12 +111,12 @@ rule get_rep_proteins:
         """
 
 
-localrules: rename_protein_catalog
-rule rename_protein_catalog:
+localrules: orf2gene
+rule orf2gene:
     input:
-        cluster_attribution = "Genecatalog/orf2gene_oldnames.tsv",
+        cluster_attribution = "genecatalog/orf2gene_oldnames.tsv",
     output:
-        cluster_attribution = "Genecatalog/clustering/orf2gene.tsv.gz",
+        cluster_attribution = "genecatalog/clustering/orf2gene.tsv.gz",
     run:
         import pandas as pd
         # CLuterID    GeneID    empty third column
@@ -139,13 +139,13 @@ rule rename_protein_catalog:
 localrules: rename_gene_catalog
 rule rename_gene_catalog:
     input:
-        fna = "Genecatalog/all_genes/predicted_genes.fna",
-        faa= "Genecatalog/all_genes/predicted_genes.faa",
-        orf2gene = "Genecatalog/clustering/orf2gene.tsv.gz",
-        representatives= "Genecatalog/representatives_of_clusters.fasta"
+        fna = "genecatalog/all_genes/predicted_genes.fna",
+        faa= "genecatalog/all_genes/predicted_genes.faa",
+        orf2gene = "genecatalog/clustering/orf2gene.tsv.gz",
+        representatives= "genecatalog/representatives_of_clusters.fasta"
     output:
-        fna= "Genecatalog/gene_catalog.fna",
-        faa= "Genecatalog/gene_catalog.faa",
+        fna= "genecatalog/gene_catalog.fna",
+        faa= "genecatalog/gene_catalog.faa",
     run:
         import pandas as pd
         from Bio import SeqIO
