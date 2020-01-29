@@ -52,7 +52,7 @@ rule cluster_genes:
 
             mmseqs {params.clustermethod} -c {params.coverage} \
             --min-seq-id {params.minid} {params.extra} \
-            --threads {threads} {params.db} {params.clusterdb} {params.tmpdir}  &>>  {log}
+            --threads {threads} {params.db} {params.clusterdb} {params.tmpdir}  >>  {log}
 
             rm -fr  {params.tmpdir} 2>> {log}
         """
@@ -78,13 +78,13 @@ rule get_rep_proteins:
         rep_seqs_db=lambda wc, output: os.path.join(output.rep_seqs_db,'db')
     shell:
         """
-        mmseqs createtsv {params.db} {params.db} {params.clusterdb} {output.cluster_attribution}  &> {log}
+        mmseqs createtsv {params.db} {params.db} {params.clusterdb} {output.cluster_attribution}  > {log}
 
         mkdir {output.rep_seqs_db} 2>> {log}
 
-        mmseqs result2repseq {params.db} {params.clusterdb} {params.rep_seqs_db}  &>> {log}
+        mmseqs result2repseq {params.db} {params.clusterdb} {params.rep_seqs_db}  >> {log}
 
-        mmseqs result2flat {params.db} {params.db} {params.rep_seqs_db} {output.rep_seqs}  &>> {log}
+        mmseqs result2flat {params.db} {params.db} {params.rep_seqs_db} {output.rep_seqs}  >> {log}
 
         """
 
