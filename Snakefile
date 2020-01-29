@@ -16,7 +16,7 @@ rule cluster:
         #"genecatalog/counts/median_coverage.tsv.gz",
 rule annotate:
     input:
-        "genecatalog/annotations/eggNog.tsv.gz"
+        "genecatalog/annotations/eggNog.h5"
 
 # add scripts
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
