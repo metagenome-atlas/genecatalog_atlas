@@ -33,3 +33,11 @@ EGGNOG_DIR = os.path.join(DBDIR,'EggNOGV2')
 include: "rules/clustering.smk"
 include: "rules/eggNOG.smk"
 #include: "quantify.smk"
+
+
+## add default resources
+for r in workflow.rules:
+    if not "mem" in r.resources:
+        r.resources["mem"]=config["mem"]
+    if not "time" in r.resources:
+        r.resources["time"]=config["runtime"]["default"]

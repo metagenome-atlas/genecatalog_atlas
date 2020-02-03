@@ -1,6 +1,11 @@
 threads: 8
 mem: 90
 
+runtime:
+  long: 24
+  default: 10
+
+
 tmpdir: /temp
 clustermethod: linclust       # [cd-hit-est or mmseqs or linclust] see mmseqs for more details
 minlength: 30
