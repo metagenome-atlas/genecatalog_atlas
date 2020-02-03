@@ -19,14 +19,15 @@ rule filter_genes:
     run:
         import pyfastx
         import io
-        fa = pyfastx.Fasta(input[0])
+
 
         with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*100) as out_faa:
-            for gene in fa:
-                if len(gene) >= params.min_length:
-                    out_faa.write(gene.raw)
 
-        os.remove(fa.file_name+'.fxi')
+            for name,gene in pyfastx.Fasta(input[0],build_index=False):
+                if len(gene) >= params.min_length:
+                    lines='\n'.join(str2multiline(gene))
+                    out_faa.write(f">{name}\n{lines}\n")
+
 
 
 
