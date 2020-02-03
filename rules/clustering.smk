@@ -2,7 +2,6 @@ import os
 
 
 
-localrules: filter_genes
 rule filter_genes:
     input:
         faa=config['input_faa']
@@ -10,8 +9,12 @@ rule filter_genes:
         faa= "genecatalog/all_genes/filtered_genes.faa",
     threads:
         1
+    resources:
+        mem=['mem']
     params:
         min_length=config['minlength']
+    benchmark:
+        "logs/benchmark/genecatalog/filter.txt"
     run:
         import pyfastx
         import io
