@@ -14,9 +14,10 @@ rule filter_genes:
         min_length=config['minlength']
     run:
         import pyfastx
-
+        import io
         fa = pyfastx.Fasta(input[0])
-        with open(output.faa,'w') as out_faa:
+
+        with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*1000) as out_faa:
             for gene in fa:
                 if len(gene) >= params.min_length:
                     out_faa.write(gene.raw)
