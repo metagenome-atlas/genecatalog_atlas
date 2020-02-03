@@ -21,7 +21,7 @@ rule filter_genes:
         import io
         fa = pyfastx.Fasta(input[0])
 
-        with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*1000) as out_faa:
+        with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*100) as out_faa:
             for gene in fa:
                 if len(gene) >= params.min_length:
                     out_faa.write(gene.raw)
@@ -139,7 +139,7 @@ rule rename_gene_catalog:
 
         map_names= pd.read_csv(input.orf2gene,index_col=0,sep='\t').loc[representatives,'Gene']
 
-        with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*1000) as outf:
+        with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*100) as outf:
             for gene in fa:
                 new_name= map_names[gene.name]
                 lines='\n'.join(str2multiline(gene.seq))
