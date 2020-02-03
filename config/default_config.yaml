@@ -2,7 +2,7 @@ threads: 8
 mem: 90
 
 tmpdir: /temp
-clustermethod: linclust       # [mmseqs or linclust] see mmseqs for more details
+clustermethod: linclust       # [cd-hit-est or mmseqs or linclust] see mmseqs for more details
 minlength: 30
 minid: 0.95                   # min id for gene clustering for the main gene catalog used for annotation
 coverage: 0.8
