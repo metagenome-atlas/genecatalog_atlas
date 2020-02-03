@@ -126,6 +126,7 @@ rule rename_gene_catalog:
     run:
         import pandas as pd
         import pyfastx
+        import io
         from utils.fasta import str2multiline
 
         fa = pyfastx.Fasta(input.representatives)
@@ -134,7 +135,7 @@ rule rename_gene_catalog:
 
         map_names= pd.read_csv(input.orf2gene,index_col=0,sep='\t').loc[representatives,'Gene']
 
-        with open(output.faa,'w') as outf:
+        with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*1000) as outf:
             for gene in fa:
                 new_name= map_names[gene.name]
                 lines='\n'.join(str2multiline(gene.seq))
