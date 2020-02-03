@@ -6,5 +6,5 @@ clustermethod: linclust       # [mmseqs or linclust] see mmseqs for more details
 minlength: 30
 minid: 0.95                   # min id for gene clustering for the main gene catalog used for annotation
 coverage: 0.8
-extra: "--kmer-per-seq 80 --cov-mode 1"
+extra: "--kmer-per-seq 80 --cov-mode 1 --cluster-mode 2"
 SubsetSize: 500000
