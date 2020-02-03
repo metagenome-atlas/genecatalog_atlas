@@ -10,7 +10,7 @@ rule filter_genes:
     threads:
         1
     resources:
-        mem=['mem']
+        mem=config['mem']
     params:
         min_length=config['minlength']
     benchmark:
