@@ -2,40 +2,40 @@ import os
 
 
 
-rule filter_genes:
-    input:
-        faa=config['input_faa']
-    output:
-        faa= "genecatalog/all_genes/filtered_genes.faa",
-    threads:
-        1
-    resources:
-        mem=config['mem'],
-        time= config['runtime']['long']
-    params:
-        min_length=config['minlength']
-    benchmark:
-        "logs/benchmark/genecatalog/filter.txt"
-    run:
-        import pyfastx
-        import io
-
-
-        with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*100) as out_faa:
-
-            for name,gene in pyfastx.Fasta(input[0],build_index=False):
-                if len(gene) >= params.min_length:
-                    lines='\n'.join(str2multiline(gene))
-                    out_faa.write(f">{name}\n{lines}\n")
-
+# rule filter_genes:
+#     input:
+#         faa=config['input_faa']
+#     output:
+#         faa= "genecatalog/all_genes/filtered_genes.faa",
+#     threads:
+#         1
+#     resources:
+#         mem=config['mem'],
+#         time= config['runtime']['long']
+#     params:
+#         min_length=config['minlength']
+#     benchmark:
+#         "logs/benchmark/genecatalog/filter.txt"
+#     run:
+#         import pyfastx
+#         import io
+#
+#
+#         with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*100) as out_faa:
+#
+#             for name,gene in pyfastx.Fasta(input[0],build_index=False):
+#                 if len(gene) >= params.min_length:
+#                     lines='\n'.join(str2multiline(gene))
+#                     out_faa.write(f">{name}\n{lines}\n")
+#
 
 
 
 rule cluster_genes:
     input:
-        faa= "genecatalog/all_genes/filtered_genes.faa"
+        faa= config['input_faa']
     output:
-        db=temp(directory("genecatalog/all_genes/predicted_genes")),
+        db=temp(directory("genecatalog/input_genes")),
         clusterdb = temp(directory("genecatalog/clustering/mmseqs"))
     conda:
         "../envs/mmseqs.yaml"
