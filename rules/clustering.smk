@@ -116,3 +116,109 @@ rule rename_gene_catalog:
                 new_name= map_names[gene.name]
                 lines='\n'.join(str2multiline(gene.seq))
                 outf.write(">{new_name} {gene.description}\n{lines}\n")
+
+
+
+
+rule make_genecatalog_db:
+    input:
+        faa=rules.rename_gene_catalog.output.faa
+    output:
+        db=temp(directory("genecatalog/DBgenecatalog/")),
+        tmpdir=temp(directory("genecatalog/DBgenecatalog_tmp/"))
+    params:
+        db=lambda wc, output: os.path.join(output.db,'mmseqsdb'),
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/make_genecatalog_db.log"
+    threads:
+        config["threads"]
+    shell:
+        """
+            mkdir -p {output.tmpdir} {output} 2>> {log}
+            mmseqs createdb {input.faa} {params.db} &> {log}
+
+        """
+
+
+
+def get_subcluster_id(wildcards):
+
+    id= int(wildcards.id)
+
+    assert (id>0) & (id<100), f"id should be an integer in [0,100], got {wildcards.id}"
+
+    id = id/100
+
+    if id >= float(config['minid']):
+        logger.error("Id for gene subclustering should be lower than that the gene catalog"
+                     f" {id} is not smaller than {config['minid']}"
+                     )
+        exit(1)
+    return id
+
+rule subcluster_genes:
+    input:
+        ancient(rules.make_genecatalog_db.output),
+        faa=rules.rename_gene_catalog.output.faa # used to update if genecatalog updates
+    output:
+        clusterdb = temp(directory("genecatalog/subcluster/mmseqs{id}"))
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/subcluster/cluster_{id}.log"
+    threads:
+        config.get("threads", 1)
+    params:
+        clustermethod = 'linclust' if config['clustermethod']=='linclust' else 'cluster',
+        coverage=config['coverage'],
+        minid= get_subcluster_id,
+        extra=config['extra'],
+        clusterdb= lambda wc, output: os.path.join(output.clusterdb,'clusterdb'),
+        db=lambda wc, input: os.path.join(input.db,'mmseqsdb')
+    shell:
+        """
+            mmseqs {params.clustermethod} -c {params.coverage} \
+            --min-seq-id {params.minid} {params.extra} \
+            --threads {threads} {params.db} {params.clusterdb} {input.tmpdir}  >  {log}
+
+            rm -fr  {params.tmpdir} 2>> {log}
+        """
+
+
+rule get_rep_subclusters:
+    input:
+        db=ancient(rules.subcluster_genes.input.db),
+        tmpdir=ancient(rules.subcluster_genes.input.tmpdir)
+        clusterdb = rules.subcluster_genes.output.clusterdb,
+    output:
+        cluster_attribution = temp("genecatalog/subcluster/orf2GC{id}_oldnames.tsv"),
+        rep_seqs_db = temp(directory("genecatalog/subcluster/rep_GC{id}")),
+        rep_seqs = temp("genecatalog/subcluster/representatives_GC{id}.fasta")
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/subcluster/get_rep_proteins_{id}.log"
+    threads:
+        config.get("threads", 1)
+    params:
+        clusterdb= lambda wc, input: os.path.join(input.clusterdb,'clusterdb'),
+        db=lambda wc, input: os.path.join(input.db,'inputdb'),
+        rep_seqs_db=lambda wc, output: os.path.join(output.rep_seqs_db,'db')
+    shell:
+        """
+        mmseqs createtsv {params.db} {params.db} {params.clusterdb} {output.cluster_attribution}  > {log}
+
+        mkdir {output.rep_seqs_db} 2>> {log}
+
+        mmseqs result2repseq {params.db} {params.clusterdb} {params.rep_seqs_db}  >> {log}
+
+        mmseqs result2flat {params.db} {params.db} {params.rep_seqs_db} {output.rep_seqs}  >> {log}
+
+        """
+
+
+rule subcluster:
+    input:
+        expand("genecatalog/subcluster/representatives_GC{id}.fasta",id=config['subclusterids'])

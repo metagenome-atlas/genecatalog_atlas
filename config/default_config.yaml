@@ -13,3 +13,7 @@ minid: 0.95                   # min id for gene clustering for the main gene cat
 coverage: 0.8
 extra: "--kmer-per-seq 80 --cov-mode 1"
 SubsetSize: 500000
+
+subclusterids:
+  - 90
+  - 50
