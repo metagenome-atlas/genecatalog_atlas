@@ -6,7 +6,7 @@ runtime:
   default: 10
 
 
-tmpdir: /temp
+tmpdir: /tmp
 clustermethod: linclust       # [cd-hit-est or mmseqs or linclust] see mmseqs for more details
 minlength: 30
 minid: 0.95                   # min id for gene clustering for the main gene catalog used for annotation
