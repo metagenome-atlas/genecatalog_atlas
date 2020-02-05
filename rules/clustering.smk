@@ -95,28 +95,13 @@ localrules: rename_gene_catalog
 rule rename_gene_catalog:
     input:
         orf2gene = "genecatalog/clustering/orf2gene.tsv.gz",
-        representatives= "genecatalog/representatives_of_clusters.fasta"
+        mapping= "genecatalog/representatives_of_clusters.fasta"
     output:
-        temp("genecatalog/representatives_of_clusters.fasta.fxi"),
         faa= "genecatalog/gene_catalog.faa"
     shadow: "minimal"
-    run:
-        import pandas as pd
-        import pyfastx
-        import io
-        from utils.fasta import str2multiline
+    script:
+        "../scripts/rename_catalog.py"
 
-        fa = pyfastx.Fasta(input.representatives)
-
-        representatives= fa.keys()
-
-        map_names= pd.read_csv(input.orf2gene,index_col=0,sep='\t').loc[representatives,'Gene']
-
-        with open(output.faa,'w',buffering=io.DEFAULT_BUFFER_SIZE*100) as outf:
-            for gene in fa:
-                new_name= map_names[gene.name]
-                lines='\n'.join(str2multiline(gene.seq))
-                outf.write(">{new_name} {gene.description}\n{lines}\n")
 
 
 
