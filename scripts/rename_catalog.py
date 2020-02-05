@@ -1,16 +1,6 @@
 import pandas as pd
+import utils
 
-
-def get_names(fasta_in):
-
-    names=[]
-
-    with open(fasta_in) as fin:
-        for line in fin:
-            if line[0]=='>':
-                name=line[1:].split(maxsplit=1)[0]
-                names.append(name)
-    return names
 
 def rename_fasta(fasta_in,fasta_out,map_names):
 
@@ -25,19 +15,34 @@ def rename_fasta(fasta_in,fasta_out,map_names):
 
             fout.write(line)
 
+
+
+
+
+
 if __name__ == '__main__':
+
+
+    # Rename mapping
+    #  ORF to gene
+
+    # Noheaders CLuterID    GeneID    empty third column
+    orf2gene= pd.read_csv(snakemake.input.cluster_attribution,index_col=1, header=None,sep='\t').iloc[:,0]
+
+    representatives= orf2gene.unique()
+    gene_names=utils.gen_names_for_range(len(representatives),snakemake.params.prefix)
+
+    map_names = dict(zip(representatives,gene_names))
+
+    orf2gene = orf2gene.map(map_names)
+    orf2gene.index.name='ORF'
+    orf2gene.name = 'Gene'
+    orf2gene.to_csv(snakemake.output.cluster_attribution,sep='\t',header=True)
+
 
     fasta_in=snakemake.input.faa
     fasta_out=snakemake.output.faa
 
-    mapping_file= snakemake.input.mapping
 
-    representatives= get_names(fasta_in)
-
-    assert len(representatives)==len(set(representatives))
-
-    Mapping=pd.read_csv(mapping_file,index_col=0,sep='\t',squeeze=True)
-    map_names= Mapping.loc[representatives].to_dict()
-    del Mapping
 
     rename_fasta(fasta_in,fasta_out,map_names)

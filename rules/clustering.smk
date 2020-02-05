@@ -66,39 +66,20 @@ rule get_rep_proteins:
         """
 
 
-localrules: orf2gene
-rule orf2gene:
-    input:
-        cluster_attribution = "genecatalog/orf2gene_oldnames.tsv",
-    output:
-        cluster_attribution = "genecatalog/clustering/orf2gene.tsv.gz",
-    run:
-        import pandas as pd
-        # CLuterID    GeneID    empty third column
-        orf2gene= pd.read_csv(input.cluster_attribution,index_col=1, header=None,sep='\t')
-
-        protein_clusters_old_names= orf2gene[0].unique()
-
-        map_names = dict(zip(protein_clusters_old_names,
-                             utils.gen_names_for_range(len(protein_clusters_old_names),'Gene')))
-
-        orf2gene['Gene'] = orf2gene[0].map(map_names)
-        orf2gene.index.name='ORF'
-        orf2gene['Gene'].to_csv(output.cluster_attribution,sep='\t',header=True)
-
-
-
 
 
 
 localrules: rename_gene_catalog
 rule rename_gene_catalog:
     input:
-        mapping = "genecatalog/clustering/orf2gene.tsv.gz",
-        faa= "genecatalog/representatives_of_clusters.fasta"
+        faa= "genecatalog/representatives_of_clusters.fasta",
+        cluster_attribution = "genecatalog/orf2gene_oldnames.tsv",
     output:
-        faa= "genecatalog/gene_catalog.faa"
+        faa= "genecatalog/gene_catalog.faa",
+        cluster_attribution = "genecatalog/clustering/orf2gene.tsv.gz",
     shadow: "minimal"
+    params:
+        prefix='Gene'
     script:
         "../scripts/rename_catalog.py"
 
