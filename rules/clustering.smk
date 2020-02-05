@@ -1,12 +1,50 @@
 import os
 
 
+rule input_genes:
+    input:
+        faa= os.path.abspath(config['input_faa'])
+    output:
+        faa= temp("genecatalog/input.faa")
+    run:
+        import pyfastx
+        
+        with open(output.faa,'w') as fout:
+            names=[]
+            for name,seq in pyfastx.Fasta(input.faa,build_index=False):
+                if name in names:
+                    print(f"Seq with header {name} is duplicated")
+                else:
+                    fout.write(f">{name}\n{seq}\n")
+
+                names.append(name)
+
+
+
+
+
+rule createdb:
+    input:
+        "genecatalog/{catalogname}.faa"
+    output:
+        temp(directory("genecatalog/{catalogname}_mmseqdb"))
+    threads:
+        1
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/make_db/{catalogname}.log"
+    shell:
+        " mkdir {output}; "
+        "mmseqs createdb {input} {output}/db "
+
+
+
 
 rule cluster_genes:
     input:
-        faa= config['input_faa']
+        db="genecatalog/input_mmseqdb"
     output:
-        db=temp(directory("genecatalog/input_genes")),
         clusterdb = temp(directory("genecatalog/clustering/mmseqs"))
     conda:
         "../envs/mmseqs.yaml"
@@ -20,16 +58,13 @@ rule cluster_genes:
         coverage=config['coverage'], #0.8,
         minid=config['minid'], # 0.00
         extra=config['extra'],
-        clusterdb= lambda wc, output: os.path.join(output.clusterdb,'clusterdb'),
-        db=lambda wc, output: os.path.join(output.db,'inputdb')
     shell:
         """
             mkdir -p {params.tmpdir} {output} 2>> {log}
-            mmseqs createdb {input.faa} {params.db} &> {log}
 
             mmseqs {params.clustermethod} -c {params.coverage} \
             --min-seq-id {params.minid} {params.extra} \
-            --threads {threads} {params.db} {params.clusterdb} {params.tmpdir}  >>  {log}
+            --threads {threads} {input.db}/db {output.clusterdb}/db {params.tmpdir}  >>  {log}
 
             rm -fr  {params.tmpdir} 2>> {log}
         """
@@ -37,7 +72,7 @@ rule cluster_genes:
 
 rule get_rep_proteins:
     input:
-        db= rules.cluster_genes.output.db,
+        db= rules.cluster_genes.input.db,
         clusterdb = rules.cluster_genes.output.clusterdb,
     output:
         cluster_attribution = temp("genecatalog/orf2gene_oldnames.tsv"),
@@ -49,19 +84,15 @@ rule get_rep_proteins:
         "logs/genecatalog/clustering/get_rep_proteins.log"
     threads:
         config.get("threads", 1)
-    params:
-        clusterdb= lambda wc, input: os.path.join(input.clusterdb,'clusterdb'),
-        db=lambda wc, input: os.path.join(input.db,'inputdb'),
-        rep_seqs_db=lambda wc, output: os.path.join(output.rep_seqs_db,'db')
     shell:
         """
-        mmseqs createtsv {params.db} {params.db} {params.clusterdb} {output.cluster_attribution}  > {log}
+        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log}
 
         mkdir {output.rep_seqs_db} 2>> {log}
 
-        mmseqs result2repseq {params.db} {params.clusterdb} {params.rep_seqs_db}  >> {log}
+        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log}
 
-        mmseqs result2flat {params.db} {params.db} {params.rep_seqs_db} {output.rep_seqs}  >> {log}
+        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log}
 
         """
 
@@ -84,22 +115,6 @@ rule rename_gene_catalog:
         "../scripts/rename_catalog.py"
 
 
-
-
-rule createdb:
-    input:
-        "genecatalog/{catalogname}.faa"
-    output:
-        temp(directory("genecatalog/{catalogname}_mmseqdb"))
-    threads:
-        1
-    conda:
-        "../envs/mmseqs.yaml"
-    log:
-        "logs/genecatalog/make_db/{catalogname}.log"
-    shell:
-        " mkdir {output}; "
-        "mmseqs createdb {input} {output}/db "
 
 
 
