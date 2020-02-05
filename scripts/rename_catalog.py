@@ -29,6 +29,7 @@ if __name__ == '__main__':
     # Noheaders CLuterID    GeneID    empty third column
     orf2gene= pd.read_csv(snakemake.input.cluster_attribution,index_col=1, header=None,sep='\t').iloc[:,0]
 
+    assert orf2gene.index.is_unique, "orf names should be unique"
     representatives= orf2gene.unique()
     gene_names=utils.gen_names_for_range(len(representatives),snakemake.params.prefix)
 
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     orf2gene.name = 'Gene'
     orf2gene.to_csv(snakemake.output.cluster_attribution,sep='\t',header=True)
 
-
+    # Rename representative sequence
     fasta_in=snakemake.input.faa
     fasta_out=snakemake.output.faa
 
