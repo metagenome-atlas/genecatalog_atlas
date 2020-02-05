@@ -94,8 +94,8 @@ rule orf2gene:
 localrules: rename_gene_catalog
 rule rename_gene_catalog:
     input:
-        orf2gene = "genecatalog/clustering/orf2gene.tsv.gz",
-        mapping= "genecatalog/representatives_of_clusters.fasta"
+        mapping = "genecatalog/clustering/orf2gene.tsv.gz",
+        faa= "genecatalog/representatives_of_clusters.fasta"
     output:
         faa= "genecatalog/gene_catalog.faa"
     shadow: "minimal"

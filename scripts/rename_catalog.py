@@ -27,17 +27,17 @@ def rename_fasta(fasta_in,fasta_out,map_names):
 
 if __name__ == '__main__':
 
-fasta_in=snakemake.input.faa
-fasta_out=snakemake.output.faa
+    fasta_in=snakemake.input.faa
+    fasta_out=snakemake.output.faa
 
-mapping_file= snakemake.input.mapping
+    mapping_file= snakemake.input.mapping
 
-representatives= get_names(fasta_in)
+    representatives= get_names(fasta_in)
 
-assert len(representatives)==len(set(representatives))
+    assert len(representatives)==len(set(representatives))
 
-Mapping=pd.read_csv(mapping_file,index_col=0,sep='\t',squeeze=True)
-map_names= Mapping.loc[representatives].to_dict()
-del Mapping
+    Mapping=pd.read_csv(mapping_file,index_col=0,sep='\t',squeeze=True)
+    map_names= Mapping.loc[representatives].to_dict()
+    del Mapping
 
-rename_fasta(fasta_in,fasta_out,map_names)
+    rename_fasta(fasta_in,fasta_out,map_names)
