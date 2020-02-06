@@ -1,19 +1,24 @@
 import os
 
-
+localrules: input_genes
 rule input_genes:
     input:
         faa= os.path.abspath(config['input_faa'])
     output:
         faa= temp("genecatalog/input.faa")
+    benchmark:
+        "logs/benchmarks/input_genes.tsv"
     run:
-        import pyfastx
-        
-        with open(output.faa,'w') as fout:
+
+        with open(output.faa,'w') as fout, oepn(input.faa) as fin:
             names=[]
-            for name,seq in pyfastx.Fasta(input.faa,build_index=False):
-                if name in names:
-                    print(f"Seq with header {name} is duplicated")
+            for line in fin:
+
+                if line[0]=='>':
+                    name=line[1:].split(maxsplit=1)[0]
+
+                    if name in names:
+                        print(f"Seq with header {name} is duplicated")
                 else:
                     fout.write(f">{name}\n{seq}\n")
 
@@ -109,6 +114,8 @@ rule rename_gene_catalog:
         faa= "genecatalog/gene_catalog.faa",
         cluster_attribution = "genecatalog/clustering/orf2gene.tsv.gz",
     shadow: "minimal"
+    benchmark:
+        "logs/benchmarks/rename_catalog.tsv"
     params:
         prefix='Gene'
     script:
