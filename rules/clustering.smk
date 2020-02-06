@@ -8,6 +8,8 @@ rule input_genes:
         faa= temp("genecatalog/input.faa")
     benchmark:
         "logs/benchmarks/input_genes.tsv"
+    shadow:
+        "minimal"
     run:
 
         with open(output.faa,'w') as fout, oepn(input.faa) as fin:
