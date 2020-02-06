@@ -24,6 +24,8 @@ rule createdb:
         "../envs/mmseqs.yaml"
     log:
         "logs/genecatalog/make_db/{catalogname}.log"
+    benchmark:
+        "logs/benchmarks/createdb/{catalogname}.tsv"
     shell:
         "mkdir {output} 2> {log}  ;"
         "mmseqs createdb {input} {output}/db >> {log} 2>&1"
