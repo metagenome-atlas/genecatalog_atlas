@@ -5,49 +5,20 @@ sys.stdout= open(snakemake.log[0],"w")
 sys.stderr= open(snakemake.log[0],"a")
 
 
-from itertools import groupby
-
-def fasta_iter(fasta_name):
-    """
-    given a fasta file. yield tuples of name as string and sequences in binary format
-    """
-    #first open the file outside "
-    fin = open(fasta_name, 'rb')
-
-    # ditch the boolean (x[0]) and just keep the header or sequence since
-    # we know they alternate.
-    faiter = (x[1] for x in groupby(fin, lambda line: str(line, 'utf-8')[0] == ">"))
-
-    for header in faiter:
-        # drop the ">"
-        headerStr = str(header.__next__(), 'utf-8')
-        name=headerStr[1:].split(maxsplit=1)[0]
-        seqlines= faiter.__next__()
-
-        yield (name, seqlines)
 
 
 def rename_fasta(fasta_in,fasta_out,map_names):
 
     assert type(map_names)==dict
-    names= []
 
-    with open(fasta_out,'wb') as fout:
-        for name,seqlines in fasta_iter(fasta_in):
-
-            if name in names:
-                print(f"Seq with header {name} is duplicated")
-            else:
-
-                names.append(name)
+    with open(fasta_in) as fin, open(fasta_out,'w') as fout:
+        for line in fin:
+            if line[0]=='>':
+                name=line[1:].split(maxsplit=1)[0]
                 new_name=map_names.pop(name)
+                line=f">{new_name}"
 
-                fout.write(f">{new_name}\n".encode('utf-8'))
-                fout.writelines(seqlines)
-
-
-
-
+            fout.write(line)
 
 
 
@@ -73,18 +44,17 @@ if __name__ == '__main__':
 
     duplicated_genes=[]
     if not orf2gene.index.is_unique:
-        print("ORF names are not unique, remove duplicates see:\n")
+        raise Exception("ORF names are not unique, remove duplicates see:\n",
+              orf2gene.loc[orf2gene.index.duplicated(keep=False)])
 
-        print(orf2gene.loc[orf2gene.index.duplicated(keep=False)])
 
-        orf2gene=orf2gene.loc[~orf2gene.index.duplicated()]
+        #orf2gene=orf2gene.loc[~orf2gene.index.duplicated()]
+
 
     orf2gene.to_csv(snakemake.output.cluster_attribution,sep='\t',header=True)
 
+    del orf2gene
+
     # Rename representative sequence
-    fasta_in=snakemake.input.faa
-    fasta_out=snakemake.output.faa
 
-
-
-    rename_fasta(fasta_in,fasta_out,map_names)
+    rename_fasta(snakemake.input.faa,snakemake.output.faa,map_names)

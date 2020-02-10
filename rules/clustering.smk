@@ -90,9 +90,6 @@ rule get_rep_proteins:
 
 
 
-
-
-localrules: rename_gene_catalog
 rule rename_gene_catalog:
     input:
         faa= "genecatalog/representatives_of_clusters.fasta",
