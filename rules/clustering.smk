@@ -27,8 +27,8 @@ rule createdb:
     benchmark:
         "logs/benchmarks/createdb/{catalogname}.tsv"
     shell:
-        "mkdir {output} 2> {log}  ;"
-        "mmseqs createdb {input} {output}/db >> {log} 2>&1"
+        "mkdir {output} 2> {log} ; "
+        "mmseqs createdb {input} {output}/db >> {log} 2>&1 "
 
 
 
