@@ -28,7 +28,7 @@ rule createdb:
         "logs/benchmarks/createdb/{catalogname}.tsv"
     shell:
         "mkdir {output} 2> {log} ; "
-        "mmseqs createdb {input} {output}/db >> {log} 2>&1 "
+        "mmseqs createdb {input} {output}/db >> {log} 2>> {log} "
 
 
 
@@ -56,7 +56,7 @@ rule cluster_genes:
 
             mmseqs {params.clustermethod} -c {params.coverage} \
             --min-seq-id {params.minid} {params.extra} \
-            --threads {threads} {input.db}/db {output.clusterdb}/db {params.tmpdir}  >> {log} 2>&1
+            --threads {threads} {input.db}/db {output.clusterdb}/db {params.tmpdir}  >> {log} 2>> {log}
 
             rm -fr  {params.tmpdir} 2>> {log}
         """
@@ -78,13 +78,13 @@ rule get_rep_proteins:
         config.get("threads", 1)
     shell:
         """
-        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>&1
+        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
 
         mkdir {output.rep_seqs_db} 2>> {log}
 
-        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log} 2>&1
+        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log} 2>> {log}
 
-        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>&1
+        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>> {log}
 
         """
 
@@ -150,7 +150,7 @@ rule subcluster_genes:
             mkdir {output.tmpdir} 2> {log}
             mmseqs {params.clustermethod} -c {params.coverage} \
             --min-seq-id {params.minid} {params.extra} \
-            --threads {threads} {input.db}/db {output.clusterdb}/db {output.tmpdir}  >>  {log} 2>&1
+            --threads {threads} {input.db}/db {output.clusterdb}/db {output.tmpdir}  >>  {log} 2>> {log}
         """
 
 
@@ -170,13 +170,13 @@ rule get_rep_subclusters:
         config.get("threads", 1)
     shell:
         """
-        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>&1
+        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
 
         mkdir {output.rep_seqs_db} 2>> {log}
 
-        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log} 2>&1
+        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log} 2>> {log}
 
-        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>&1
+        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>> {log}
 
         """
 
