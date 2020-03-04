@@ -60,7 +60,8 @@ rule eggNOG_homology_search:
         data_dir = EGGNOG_DIR,
         prefix = "{folder}/{prefix}"
     resources:
-        mem = config["mem"]
+        mem = config["mem"]["eggnog"],
+        time = config["runtime"]["eggnog"]
     threads:
         config["threads"]
     conda:
