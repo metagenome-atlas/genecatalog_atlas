@@ -1,5 +1,7 @@
 threads: 8
-mem: 90
+mem:
+  default: 250
+  low: 20
 
 runtime:
   long: 24

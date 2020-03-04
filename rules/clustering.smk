@@ -74,8 +74,13 @@ rule get_rep_proteins:
         "../envs/mmseqs.yaml"
     log:
         "logs/genecatalog/clustering/get_rep_proteins.log"
+    benchmark:
+        "logs/benchmarks/get_rep_proteins.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
     threads:
-        config.get("threads", 1)
+        1
     shell:
         """
         mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
@@ -100,6 +105,11 @@ rule rename_gene_catalog:
     shadow: "minimal"
     benchmark:
         "logs/benchmarks/rename_catalog.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
     log:
         "logs/rename_catalog.log"
     params:
@@ -179,8 +189,3 @@ rule get_rep_subclusters:
         mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>> {log}
 
         """
-
-
-rule subcluster:
-    input:
-        expand("genecatalog/subcluster/representatives_gc{id}.fasta",id=config['subclusterids'])

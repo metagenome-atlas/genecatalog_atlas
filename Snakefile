@@ -14,6 +14,11 @@ rule cluster:
         "genecatalog/gene_catalog.faa",
         "genecatalog/clustering/orf2gene.tsv.gz",
         #"genecatalog/counts/median_coverage.tsv.gz",
+
+rule subcluster:
+    input:
+        expand("genecatalog/subcluster/representatives_gc{id}.fasta",id=config['subclusterids'])
+
 rule annotate:
     input:
         "genecatalog/annotations/eggNog.h5"
@@ -38,6 +43,6 @@ include: "rules/eggNOG.smk"
 ## add default resources
 for r in workflow.rules:
     if not "mem" in r.resources:
-        r.resources["mem"]=config["mem"]
+        r.resources["mem"]=config["mem"]["default"]
     if not "time" in r.resources:
         r.resources["time"]=config["runtime"]["default"]
