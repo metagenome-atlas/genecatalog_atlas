@@ -86,7 +86,7 @@ rule eggNOG_annotation:
         data_dir = EGGNOG_DIR,
         prefix = "{folder}/{prefix}"
     threads:
-        config.get("threads", 1)
+        config["threads"]
     resources:
         mem=20
     conda:

@@ -43,7 +43,7 @@ rule cluster_genes:
     log:
         "logs/genecatalog/clustering/cluster_proteins.log"
     threads:
-        config.get("threads", 1)
+        config["threads"]
     params:
         tmpdir= os.path.join(config['tmpdir'],"mmseqs"),
         clustermethod = 'linclust' if config['clustermethod']=='linclust' else 'cluster',
