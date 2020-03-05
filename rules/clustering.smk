@@ -101,7 +101,7 @@ rule get_mapping_original:
     log:
         "logs/genecatalog/clustering/get_rep_proteins.log"
     benchmark:
-        "logs/benchmarks/get_rep_proteins.tsv"
+        "logs/benchmarks/get_mapping_original.tsv"
     resources:
         time=config['runtime']['long'],
         mem=config['mem']['low']
