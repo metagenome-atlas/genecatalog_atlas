@@ -12,7 +12,8 @@ singularity: "docker://continuumio/miniconda3"
 rule cluster:
     input:
         "genecatalog/gene_catalog.faa",
-        "genecatalog/clustering/orf2gene.tsv.gz",
+        "genecatalog/clustering/renamed_genenames.tsv.gz",
+        "genecatalog/clustering/cluster_attribution.tsv"
         #"genecatalog/counts/median_coverage.tsv.gz",
 
 rule subcluster:

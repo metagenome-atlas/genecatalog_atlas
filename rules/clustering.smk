@@ -67,9 +67,35 @@ rule get_rep_proteins:
         db= rules.cluster_genes.input.db,
         clusterdb = rules.cluster_genes.output.clusterdb,
     output:
-        cluster_attribution = temp("genecatalog/orf2gene_oldnames.tsv"),
         rep_seqs_db = temp(directory("genecatalog/protein_catalog")),
         rep_seqs = temp("genecatalog/representatives_of_clusters.fasta")
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/clustering/get_rep_proteins.log"
+    benchmark:
+        "logs/benchmarks/get_rep_proteins.tsv"
+    resources:
+        mem=config['mem']['low']
+    threads:
+        1
+    shell:
+        """
+
+        mkdir {output.rep_seqs_db} 2>> {log}
+
+        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log} 2>> {log}
+
+        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>> {log}
+
+        """
+
+rule get_mapping_original:
+    input:
+        db= rules.cluster_genes.input.db,
+        clusterdb = rules.cluster_genes.output.clusterdb,
+    output:
+        cluster_attribution = "genecatalog/clustering/cluster_attribution.tsv",
     conda:
         "../envs/mmseqs.yaml"
     log:
@@ -84,13 +110,6 @@ rule get_rep_proteins:
     shell:
         """
         mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
-
-        mkdir {output.rep_seqs_db} 2>> {log}
-
-        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log} 2>> {log}
-
-        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>> {log}
-
         """
 
 
@@ -98,10 +117,10 @@ rule get_rep_proteins:
 rule rename_gene_catalog:
     input:
         faa= "genecatalog/representatives_of_clusters.fasta",
-        cluster_attribution = "genecatalog/orf2gene_oldnames.tsv",
+        log= "logs/genecatalog/clustering/cluster_proteins.log"
     output:
         faa= "genecatalog/gene_catalog.faa",
-        cluster_attribution = "genecatalog/clustering/orf2gene.tsv.gz",
+        name_mapping = "genecatalog/clustering/renamed_genenames.tsv.gz",
     shadow: "minimal"
     benchmark:
         "logs/benchmarks/rename_catalog.tsv"
@@ -111,7 +130,7 @@ rule rename_gene_catalog:
     threads:
         1
     log:
-        "logs/rename_catalog.log"
+        "logs/genecatalog/clustering/rename_catalog.log"
     params:
         prefix='Gene'
     script:
@@ -119,14 +138,11 @@ rule rename_gene_catalog:
 
 
 
-
-
-
 def get_subcluster_id(wildcards):
 
     id= int(wildcards.id)
 
-    assert (id>0) & (id<100), f"id should be an integer in [0,100], got {wildcards.id}"
+    assert (id>30) & (id<100), f"id should be an integer in [30,100], got {wildcards.id}"
 
     id = id/100
 
