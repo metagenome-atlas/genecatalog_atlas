@@ -10,9 +10,6 @@ rule input_genes:
         "ln -s {input} {output}"
 
 
-
-
-
 rule createdb:
     input:
         "genecatalog/{catalogname}.faa"
@@ -95,7 +92,7 @@ rule get_mapping_original:
         db= rules.cluster_genes.input.db,
         clusterdb = rules.cluster_genes.output.clusterdb,
     output:
-        cluster_attribution = "genecatalog/clustering/cluster_attribution.tsv",
+        cluster_attribution = temp("genecatalog/clustering/cluster_attribution.tsv"),
     conda:
         "../envs/mmseqs.yaml"
     log:
@@ -137,6 +134,36 @@ rule rename_gene_catalog:
         "../scripts/rename_catalog.py"
 
 
+rule rename_mapping:
+    input:
+        name_mapping = "genecatalog/clustering/renamed_genenames.tsv.gz",
+        cluster_mapping ="genecatalog/clustering/cluster_attribution.tsv"
+    output:
+        "genecatalog/clustering/orf2gene.tsv.gz",
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    log:
+        "logs/genecatalog/clustering/rename_mapping_clusters.log"
+    run:
+
+
+        import pandas as pd
+
+        name_mapping= pd.read_csv(input.name_mapping,index_col=0,sep='\t',squeeze=True)
+
+        gene2gc= pd.read_csv(input.cluster_mapping,index_col=1,header=None,squeeze=True,sep='\t')
+
+        gene2gc=gene2gc.map(name_mapping).sort_index()
+        gene2gc.index.name='ORF'
+        gene2gc.name='Gene'.format(**wildcards)
+
+        gene2gc.to_csv(output[0],sep='\t',header=True)
+
+
+#### SUBCLUSTERING ####
 
 def get_subcluster_id(wildcards):
 
@@ -158,8 +185,8 @@ rule subcluster_genes:
         db=ancient("genecatalog/gene_catalog_mmseqdb"),
         faa="genecatalog/gene_catalog.faa" # used to update if genecatalog updates
     output:
-        clusterdb = temp(directory("genecatalog/subcluster/mmseqs{id}")),
-        tmpdir= temp(directory(os.path.join(config['tmpdir'],"subcluster{id}"))),
+        clusterdb = temp(directory("genecatalog/subcluster/GC{id}_mmseqs")),
+        tmpdir= temp(directory(os.path.join(config['tmpdir'],"GC{id}_subcluster"))),
     conda:
         "../envs/mmseqs.yaml"
     log:
@@ -185,18 +212,16 @@ rule get_rep_subclusters:
         db=ancient(rules.subcluster_genes.input.db),
         clusterdb = rules.subcluster_genes.output.clusterdb,
     output:
-        cluster_attribution = temp("genecatalog/subcluster/gene2gc{id}_oldnames.tsv"),
-        rep_seqs_db = temp(directory("genecatalog/subcluster/rep_gc{id}")),
-        rep_seqs = temp("genecatalog/subcluster/representatives_gc{id}.fasta")
+        rep_seqs_db = temp(directory("genecatalog/subcluster/GC{id}_rep")),
+        rep_seqs = temp("genecatalog/subcluster/GC{id}_representatives.fasta")
     conda:
         "../envs/mmseqs.yaml"
     log:
-        "logs/genecatalog/subcluster/get_rep_proteins_{id}.log"
+        "logs/genecatalog/subcluster/GC{id}_get_rep_proteins.log"
     threads:
         config.get("threads", 1)
     shell:
         """
-        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
 
         mkdir {output.rep_seqs_db} 2>> {log}
 
@@ -205,3 +230,78 @@ rule get_rep_subclusters:
         mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>> {log}
 
         """
+
+rule rename_subcluster_catalog:
+    input:
+        faa= "genecatalog/subcluster/GC{id}_representatives.fasta",
+        log= "logs/genecatalog/subcluster/cluster_{id}.log"
+    output:
+        faa= "genecatalog/subcluster/gc{id}.fasta",
+        name_mapping = temp("genecatalog/clustering/GC{id}_name_mapping.tsv"),
+    shadow: "minimal"
+    benchmark:
+        "logs/benchmarks/GC{id}_rename_gene_clusters.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    log:
+        "logs/genecatalog/clustering/GC{id}_rename_gene_clusters.log"
+    params:
+        prefix='GC{id}_'
+    script:
+        "../scripts/rename_catalog.py"
+
+
+
+
+rule get_subcluster_mapping_original:
+    input:
+        db= rules.subcluster_genes.input.db,
+        clusterdb = rules.subcluster_genes.output.clusterdb,
+    output:
+        cluster_attribution = temp("genecatalog/clustering/GC{id}_cluster_attribution.tsv"),
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/clustering/GC{id}_get_rep_proteins.log"
+    benchmark:
+        "logs/benchmarks/GC{id}_get_mapping_original.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    shell:
+        """
+        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
+        """
+
+rule rename_subcluster_mapping:
+    input:
+        name_mapping = "genecatalog/clustering/GC{id}_name_mapping.tsv",
+        cluster_mapping ="genecatalog/clustering/GC{id}_cluster_attribution.tsv"
+    output:
+        "genecatalog/clustering/gene2gc{id}.tsv.gz",
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    log:
+        "logs/genecatalog/clustering/GC{id}_rename_mapping_clusters.log"
+    run:
+
+
+        import pandas as pd
+
+        name_mapping= pd.read_csv(input.name_mapping,index_col=0,sep='\t',squeeze=True)
+
+        gene2gc= pd.read_csv(input.cluster_mapping,index_col=1,header=None,squeeze=True,sep='\t')
+
+        gene2gc=gene2gc.map(name_mapping).sort_index()
+        gene2gc.index.name='Gene'
+        gene2gc.name='GC{id}'.format(**wildcards)
+
+        gene2gc.to_csv(output[0],sep='\t',header=True)

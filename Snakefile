@@ -13,12 +13,12 @@ rule cluster:
     input:
         "genecatalog/gene_catalog.faa",
         "genecatalog/clustering/renamed_genenames.tsv.gz",
-        "genecatalog/clustering/cluster_attribution.tsv"
-        #"genecatalog/counts/median_coverage.tsv.gz",
+        "genecatalog/clustering/orf2gene.tsv.gz"
 
 rule subcluster:
     input:
-        expand("genecatalog/subcluster/representatives_gc{id}.fasta",id=config['subclusterids'])
+        expand("genecatalog/subcluster/gc{id}.fasta",id=config['subclusterids']),
+        expand("genecatalog/clustering/gene2gc{id}.tsv.gz",id=config['subclusterids'])
 
 rule annotate:
     input:
