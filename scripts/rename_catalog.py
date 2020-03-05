@@ -22,6 +22,7 @@ def rename_fasta(fasta_in,fasta_out,new_names):
                 old_names.append(old_name)
 
                 line=f">{new_names[n]} {old_name}\n"
+                n+=1
 
             fout.write(line)
     return old_names
