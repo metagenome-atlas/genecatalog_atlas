@@ -173,7 +173,7 @@ rule subcluster_genes:
         extra=config['extra'],
     shell:
         """
-            mkdir {output.tmpdir} 2> {log}
+            mkdir -p {output} 2> {log}
             mmseqs {params.clustermethod} -c {params.coverage} \
             --min-seq-id {params.minid} {params.extra} \
             --threads {threads} {input.db}/db {output.clusterdb}/db {output.tmpdir}  >>  {log} 2>> {log}
