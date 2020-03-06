@@ -112,7 +112,7 @@ checkpoint gene_subsets:
         subset_size=config['SubsetSize'],
     run:
         from utils import fasta
-        fasta.split(input[0],params.subset_size,output[0],simplify_headers=True)
+        fasta.split(input[0],params.subset_size,output[0])
 
 
 def combine_genecatalog_annotations_input(wildcards):
