@@ -198,6 +198,8 @@ rule subcluster_genes:
         minid= get_subcluster_id,
         extra=config['extra'],
         tmpdir= directory(os.path.join(config['tmpdir'],"GC{id}_subcluster"))
+    shadow:
+        "minimal"
     shell:
         """
             mkdir -p {output} {params.tmpdir} 2> {log}
