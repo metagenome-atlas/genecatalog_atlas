@@ -186,7 +186,6 @@ rule subcluster_genes:
         faa="genecatalog/gene_catalog.faa" # used to update if genecatalog updates
     output:
         clusterdb = temp(directory("genecatalog/subcluster/GC{id}_mmseqs")),
-        tmpdir= temp(directory(os.path.join(config['tmpdir'],"GC{id}_subcluster"))),
     conda:
         "../envs/mmseqs.yaml"
     log:
@@ -198,12 +197,13 @@ rule subcluster_genes:
         coverage=config['coverage'],
         minid= get_subcluster_id,
         extra=config['extra'],
+        tmpdir= directory(os.path.join(config['tmpdir'],"GC{id}_subcluster"))
     shell:
         """
-            mkdir -p {output} 2> {log}
+            mkdir -p {output} {params.tmpdir} 2> {log}
             mmseqs {params.clustermethod} -c {params.coverage} \
             --min-seq-id {params.minid} {params.extra} \
-            --threads {threads} {input.db}/db {output.clusterdb}/db {output.tmpdir}  >>  {log} 2>> {log}
+            --threads {threads} {input.db}/db {output.clusterdb}/db {params.tmpdir}  >>  {log} 2>> {log}
         """
 
 
