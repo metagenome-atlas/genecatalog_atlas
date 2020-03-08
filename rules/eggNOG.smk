@@ -1,5 +1,7 @@
 
 # Download
+import hashlib
+import os
 
 
 # note: saving OG_fasta.tar.gz in order to not create secondary "success" file
@@ -13,6 +15,19 @@ def get_eggnog_db_file():
                   path=EGGNOG_DIR,
                   files=["eggnog.db","eggnog_proteins.dmnd","checksum_checked"]
                   ))
+
+
+
+def md5(fname):
+    # https://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
+    hash_md5 = hashlib.md5()
+    if not os.path.exists(fname):
+        return None
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
 
 localrules: download_eggNOG_files, verify_eggNOG_files
 
