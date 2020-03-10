@@ -302,8 +302,13 @@ rule rename_subcluster_mapping:
 
         gene2gc= pd.read_csv(input.cluster_mapping,index_col=1,header=None,squeeze=True,sep='\t')
 
-        gene2gc=gene2gc.map(name_mapping).sort_index()
+        assert type(name_mapping)==pd.Series
+        assert type(gene2gc)==pd.Series
+
+        gene2gc=pd.Series(index=gene2gc.index, data=name_mapping.loc[gene2gc.values].values,
+                          name='GC{id}'.format(**wildcards)).sort_index()
+
         gene2gc.index.name='Gene'
-        gene2gc.name='GC{id}'.format(**wildcards)
+        
 
         gene2gc.to_csv(output[0],sep='\t',header=True)
