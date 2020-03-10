@@ -38,7 +38,7 @@ EGGNOG_DIR = os.path.join(DBDIR,'EggNOGV2')
 
 include: "rules/clustering.smk"
 include: "rules/eggNOG.smk"
-#include: "quantify.smk"
+include: "rules/compare.smk"
 
 
 ## add default resources

@@ -20,3 +20,11 @@ SubsetSize: 500000
 subclusterids:
   - 90
   - 50
+
+compare_catalogs:
+  gc90: "genecatalog/subcluster/gc90.fasta"
+  gc50: "genecatalog/subcluster/gc50.fasta"
+
+query: "gc90"
+
+compare_id: 0.9
