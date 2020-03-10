@@ -1,5 +1,7 @@
 
 # Download
+import hashlib
+import os
 
 
 # note: saving OG_fasta.tar.gz in order to not create secondary "success" file
@@ -13,6 +15,19 @@ def get_eggnog_db_file():
                   path=EGGNOG_DIR,
                   files=["eggnog.db","eggnog_proteins.dmnd","checksum_checked"]
                   ))
+
+
+
+def md5(fname):
+    # https://stackoverflow.com/questions/3431825/generating-an-md5-checksum-of-a-file
+    hash_md5 = hashlib.md5()
+    if not os.path.exists(fname):
+        return None
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
 
 localrules: download_eggNOG_files, verify_eggNOG_files
 
@@ -60,9 +75,12 @@ rule eggNOG_homology_search:
         data_dir = EGGNOG_DIR,
         prefix = "{folder}/{prefix}"
     resources:
-        mem = config["mem"]
+        mem = config["mem"]["eggnog"],
+        time = config["runtime"]["eggnog"]
     threads:
-        config["threads"]
+        config.get("threads_eggnog", config['threads'])
+    benchmark:
+        "{folder}/logs/benchmark/eggNOG_homology_search_diamond/{prefix}.log"
     conda:
         "../envs/eggNOG.yaml"
     log:
@@ -86,13 +104,15 @@ rule eggNOG_annotation:
         data_dir = EGGNOG_DIR,
         prefix = "{folder}/{prefix}"
     threads:
-        config.get("threads", 1)
+        config.get("threads_eggnog", config['threads'])
     resources:
         mem=20
     conda:
         "../envs/eggNOG.yaml"
     log:
         "{folder}/logs/{prefix}/eggNOG_annotate_hits_table.log"
+    benchmark:
+        "{folder}/logs/benchmark/eggNOG_annotate_hits_table/{prefix}.log"
     shell:
         """
         emapper.py --annotate_hits_table {input.seed} --no_file_comments --usemem \
@@ -111,7 +131,7 @@ checkpoint gene_subsets:
         subset_size=config['SubsetSize'],
     run:
         from utils import fasta
-        fasta.split(input[0],params.subset_size,output[0],simplify_headers=True)
+        fasta.split(input[0],params.subset_size,output[0])
 
 
 def combine_genecatalog_annotations_input(wildcards):

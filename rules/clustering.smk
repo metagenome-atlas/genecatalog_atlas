@@ -1,58 +1,59 @@
 import os
 
-
-
-localrules: filter_genes
-rule filter_genes:
+localrules: input_genes
+rule input_genes:
     input:
-        faa=config['input_faa']
+        faa= os.path.abspath(config['input_faa'])
     output:
-        faa= "genecatalog/all_genes/filtered_genes.faa",
+        faa= temp("genecatalog/input.faa")
+    shell:
+        "ln -s {input} {output}"
+
+
+rule createdb:
+    input:
+        "genecatalog/{catalogname}.faa"
+    output:
+        temp(directory("genecatalog/{catalogname}_mmseqdb"))
     threads:
         1
-    params:
-        min_length=config['minlength']
-    run:
-        import pyfastx
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/make_db/{catalogname}.log"
+    benchmark:
+        "logs/benchmarks/createdb/{catalogname}.tsv"
+    shell:
+        "mkdir {output} 2> {log} ; "
+        "mmseqs createdb {input} {output}/db >> {log} 2>> {log} "
 
-        fa = pyfastx.Fasta(input[0])
-        with open(output.faa,'w') as out_faa:
-            for gene in fa:
-                if len(gene) >= params.min_length:
-                    out_faa.write(gene.raw)
-
-        os.remove(fa.file_name+'.fxi')
 
 
 
 rule cluster_genes:
     input:
-        faa= "genecatalog/all_genes/filtered_genes.faa"
+        db="genecatalog/input_mmseqdb"
     output:
-        db=temp(directory("genecatalog/all_genes/predicted_genes")),
         clusterdb = temp(directory("genecatalog/clustering/mmseqs"))
     conda:
         "../envs/mmseqs.yaml"
     log:
         "logs/genecatalog/clustering/cluster_proteins.log"
     threads:
-        config.get("threads", 1)
+        config["threads"]
     params:
         tmpdir= os.path.join(config['tmpdir'],"mmseqs"),
         clustermethod = 'linclust' if config['clustermethod']=='linclust' else 'cluster',
         coverage=config['coverage'], #0.8,
         minid=config['minid'], # 0.00
         extra=config['extra'],
-        clusterdb= lambda wc, output: os.path.join(output.clusterdb,'clusterdb'),
-        db=lambda wc, output: os.path.join(output.db,'inputdb')
     shell:
         """
             mkdir -p {params.tmpdir} {output} 2>> {log}
-            mmseqs createdb {input.faa} {params.db} &> {log}
 
             mmseqs {params.clustermethod} -c {params.coverage} \
             --min-seq-id {params.minid} {params.extra} \
-            --threads {threads} {params.db} {params.clusterdb} {params.tmpdir}  >>  {log}
+            --threads {threads} {input.db}/db {output.clusterdb}/db {params.tmpdir}  >> {log} 2>> {log}
 
             rm -fr  {params.tmpdir} 2>> {log}
         """
@@ -60,81 +61,254 @@ rule cluster_genes:
 
 rule get_rep_proteins:
     input:
-        db= rules.cluster_genes.output.db,
+        db= rules.cluster_genes.input.db,
         clusterdb = rules.cluster_genes.output.clusterdb,
     output:
-        cluster_attribution = temp("genecatalog/orf2gene_oldnames.tsv"),
         rep_seqs_db = temp(directory("genecatalog/protein_catalog")),
         rep_seqs = temp("genecatalog/representatives_of_clusters.fasta")
     conda:
         "../envs/mmseqs.yaml"
     log:
         "logs/genecatalog/clustering/get_rep_proteins.log"
+    benchmark:
+        "logs/benchmarks/get_rep_proteins.tsv"
+    resources:
+        mem=config['mem']['low']
     threads:
-        config.get("threads", 1)
-    params:
-        clusterdb= lambda wc, input: os.path.join(input.clusterdb,'clusterdb'),
-        db=lambda wc, input: os.path.join(input.db,'inputdb'),
-        rep_seqs_db=lambda wc, output: os.path.join(output.rep_seqs_db,'db')
+        1
     shell:
         """
-        mmseqs createtsv {params.db} {params.db} {params.clusterdb} {output.cluster_attribution}  > {log}
 
         mkdir {output.rep_seqs_db} 2>> {log}
 
-        mmseqs result2repseq {params.db} {params.clusterdb} {params.rep_seqs_db}  >> {log}
+        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log} 2>> {log}
 
-        mmseqs result2flat {params.db} {params.db} {params.rep_seqs_db} {output.rep_seqs}  >> {log}
+        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>> {log}
 
         """
 
-
-localrules: orf2gene
-rule orf2gene:
+rule get_mapping_original:
     input:
-        cluster_attribution = "genecatalog/orf2gene_oldnames.tsv",
+        db= rules.cluster_genes.input.db,
+        clusterdb = rules.cluster_genes.output.clusterdb,
     output:
-        cluster_attribution = "genecatalog/clustering/orf2gene.tsv.gz",
-    run:
-        import pandas as pd
-        # CLuterID    GeneID    empty third column
-        orf2gene= pd.read_csv(input.cluster_attribution,index_col=1, header=None,sep='\t')
-
-        protein_clusters_old_names= orf2gene[0].unique()
-
-        map_names = dict(zip(protein_clusters_old_names,
-                             utils.gen_names_for_range(len(protein_clusters_old_names),'Gene')))
-
-        orf2gene['Gene'] = orf2gene[0].map(map_names)
-        orf2gene.index.name='ORF'
-        orf2gene['Gene'].to_csv(output.cluster_attribution,sep='\t',header=True)
-
-
-
-
+        cluster_attribution = temp("genecatalog/clustering/cluster_attribution.tsv"),
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/clustering/get_rep_proteins.log"
+    benchmark:
+        "logs/benchmarks/get_mapping_original.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    shell:
+        """
+        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
+        """
 
 
-localrules: rename_gene_catalog
+
 rule rename_gene_catalog:
     input:
-        orf2gene = "genecatalog/clustering/orf2gene.tsv.gz",
-        representatives= "genecatalog/representatives_of_clusters.fasta"
+        faa= "genecatalog/representatives_of_clusters.fasta",
+        log= "logs/genecatalog/clustering/cluster_proteins.log"
     output:
-        temp("genecatalog/representatives_of_clusters.fasta.fxi"),
-        faa= "genecatalog/gene_catalog.faa"
+        faa= "genecatalog/gene_catalog.faa",
+        name_mapping = "genecatalog/clustering/renamed_genenames.tsv.gz",
+    shadow: "minimal"
+    benchmark:
+        "logs/benchmarks/rename_catalog.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    log:
+        "logs/genecatalog/clustering/rename_catalog.log"
+    params:
+        prefix='Gene'
+    script:
+        "../scripts/rename_catalog.py"
+
+
+rule rename_mapping:
+    input:
+        name_mapping = "genecatalog/clustering/renamed_genenames.tsv.gz",
+        cluster_mapping ="genecatalog/clustering/cluster_attribution.tsv"
+    output:
+        "genecatalog/clustering/orf2gene.tsv.gz",
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    log:
+        "logs/genecatalog/clustering/rename_mapping_clusters.log"
     run:
+
+
         import pandas as pd
-        import pyfastx
-        from utils.fasta import str2multiline
 
-        fa = pyfastx.Fasta(input.representatives)
+        name_mapping= pd.read_csv(input.name_mapping,index_col=0,sep='\t',squeeze=True)
 
-        representatives= fa.keys()
+        gene2gc= pd.read_csv(input.cluster_mapping,index_col=1,header=None,squeeze=True,sep='\t')
 
-        map_names= pd.read_csv(input.orf2gene,index_col=0,sep='\t').loc[representatives,'Gene']
+        gene2gc=gene2gc.map(name_mapping).sort_index()
+        gene2gc.index.name='ORF'
+        gene2gc.name='Gene'.format(**wildcards)
 
-        with open(output.faa,'w') as outf:
-            for gene in fa:
-                new_name= map_names[gene.name]
-                lines='\n'.join(str2multiline(gene.seq))
-                outf.write(">{new_name} {gene.description}\n{lines}\n")
+        gene2gc.to_csv(output[0],sep='\t',header=True)
+
+
+#### SUBCLUSTERING ####
+
+def get_subcluster_id(wildcards):
+
+    id= int(wildcards.id)
+
+    assert (id>30) & (id<100), f"id should be an integer in [30,100], got {wildcards.id}"
+
+    id = id/100
+
+    if id >= float(config['minid']):
+        logger.error("Id for gene subclustering should be lower than that the gene catalog"
+                     f" {id} is not smaller than {config['minid']}"
+                     )
+        exit(1)
+    return id
+
+rule subcluster_genes:
+    input:
+        db=ancient("genecatalog/gene_catalog_mmseqdb"),
+        faa="genecatalog/gene_catalog.faa" # used to update if genecatalog updates
+    output:
+        clusterdb = temp(directory("genecatalog/subcluster/GC{id}_mmseqs")),
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/subcluster/cluster_{id}.log"
+    threads:
+        config["threads"]
+    params:
+        clustermethod = 'linclust' if config['clustermethod']=='linclust' else 'cluster',
+        coverage=config['coverage'],
+        minid= get_subcluster_id,
+        extra=config['extra'],
+        tmpdir= directory(os.path.join(config['tmpdir'],"GC{id}_subcluster"))
+    shadow:
+        "minimal"
+    shell:
+        """
+            mkdir -p {output} {params.tmpdir} 2> {log}
+            mmseqs {params.clustermethod} -c {params.coverage} \
+            --min-seq-id {params.minid} {params.extra} \
+            --threads {threads} {input.db}/db {output.clusterdb}/db {params.tmpdir}  >>  {log} 2>> {log}
+        """
+
+
+rule get_rep_subclusters:
+    input:
+        db=ancient(rules.subcluster_genes.input.db),
+        clusterdb = rules.subcluster_genes.output.clusterdb,
+    output:
+        rep_seqs_db = temp(directory("genecatalog/subcluster/GC{id}_rep")),
+        rep_seqs = temp("genecatalog/subcluster/GC{id}_representatives.fasta")
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/subcluster/GC{id}_get_rep_proteins.log"
+    threads:
+        config.get("threads", 1)
+    shell:
+        """
+
+        mkdir {output.rep_seqs_db} 2>> {log}
+
+        mmseqs result2repseq {input.db}/db {input.clusterdb}/db {output.rep_seqs_db}/db  >> {log} 2>> {log}
+
+        mmseqs result2flat {input.db}/db {input.db}/db {output.rep_seqs_db}/db {output.rep_seqs}  >> {log} 2>> {log}
+
+        """
+
+rule rename_subcluster_catalog:
+    input:
+        faa= "genecatalog/subcluster/GC{id}_representatives.fasta",
+        log= "logs/genecatalog/subcluster/cluster_{id}.log"
+    output:
+        faa= "genecatalog/subcluster/gc{id}.fasta",
+        name_mapping = temp("genecatalog/clustering/GC{id}_name_mapping.tsv"),
+    shadow: "minimal"
+    benchmark:
+        "logs/benchmarks/GC{id}_rename_gene_clusters.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    log:
+        "logs/genecatalog/clustering/GC{id}_rename_gene_clusters.log"
+    params:
+        prefix='GC{id}_'
+    script:
+        "../scripts/rename_catalog.py"
+
+
+
+
+rule get_subcluster_mapping_original:
+    input:
+        db= rules.subcluster_genes.input.db,
+        clusterdb = rules.subcluster_genes.output.clusterdb,
+    output:
+        cluster_attribution = temp("genecatalog/clustering/GC{id}_cluster_attribution.tsv"),
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/clustering/GC{id}_get_rep_proteins.log"
+    benchmark:
+        "logs/benchmarks/GC{id}_get_mapping_original.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    shell:
+        """
+        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
+        """
+
+rule rename_subcluster_mapping:
+    input:
+        name_mapping = "genecatalog/clustering/GC{id}_name_mapping.tsv",
+        cluster_mapping ="genecatalog/clustering/GC{id}_cluster_attribution.tsv"
+    output:
+        "genecatalog/clustering/gene2gc{id}.tsv.gz",
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
+    threads:
+        1
+    log:
+        "logs/genecatalog/clustering/GC{id}_rename_mapping_clusters.log"
+    run:
+
+
+        import pandas as pd
+
+        name_mapping= pd.read_csv(input.name_mapping,index_col=0,sep='\t',squeeze=True)
+
+        gene2gc= pd.read_csv(input.cluster_mapping,index_col=1,header=None,squeeze=True,sep='\t')
+
+        assert type(name_mapping)==pd.Series
+        assert type(gene2gc)==pd.Series
+
+        gene2gc=pd.Series(index=gene2gc.index, data=name_mapping.loc[gene2gc.values].values,
+                          name='GC{id}'.format(**wildcards)).sort_index()
+
+        gene2gc.index.name='Gene'
+        
+
+        gene2gc.to_csv(output[0],sep='\t',header=True)

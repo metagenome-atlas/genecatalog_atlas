@@ -12,8 +12,14 @@ singularity: "docker://continuumio/miniconda3"
 rule cluster:
     input:
         "genecatalog/gene_catalog.faa",
-        "genecatalog/clustering/orf2gene.tsv.gz",
-        #"genecatalog/counts/median_coverage.tsv.gz",
+        "genecatalog/clustering/renamed_genenames.tsv.gz",
+        "genecatalog/clustering/orf2gene.tsv.gz"
+
+rule subcluster:
+    input:
+        expand("genecatalog/subcluster/gc{id}.fasta",id=config['subclusterids']),
+        expand("genecatalog/clustering/gene2gc{id}.tsv.gz",id=config['subclusterids'])
+
 rule annotate:
     input:
         "genecatalog/annotations/eggNog.h5"
@@ -33,3 +39,11 @@ EGGNOG_DIR = os.path.join(DBDIR,'EggNOGV2')
 include: "rules/clustering.smk"
 include: "rules/eggNOG.smk"
 #include: "quantify.smk"
+
+
+## add default resources
+for r in workflow.rules:
+    if not "mem" in r.resources:
+        r.resources["mem"]=config["mem"]["default"]
+    if not "time" in r.resources:
+        r.resources["time"]=config["runtime"]["default"]

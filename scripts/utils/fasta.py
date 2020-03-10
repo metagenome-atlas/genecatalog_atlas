@@ -102,7 +102,27 @@ def header2origin(fasta_file,out,simplify_header=True):
                 out_stream.write(f"{header}\t{name}\n")
     out_stream.flush()
 
+from itertools import groupby
 
+def fasta_iter(fasta_name):
+    """
+    given a fasta file. yield tuples of name as string and sequences
+    """
+    #first open the file outside "
+    fin = open(fasta_name, 'r')
+
+    # ditch the boolean (x[0]) and just keep the header or sequence since
+    # we know they alternate.
+    faiter = (x[1] for x in groupby(fin, lambda line: line[0] == ">"))
+
+    for header in faiter:
+        headerStr = header.__next__()
+        name=headerStr[1:].split(maxsplit=1)[0]
+        seqlines= faiter.__next__()
+
+
+
+        yield (name,headerStr ,seqlines)
 
 
 if __name__ == "__main__":
