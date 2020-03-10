@@ -78,7 +78,9 @@ rule eggNOG_homology_search:
         mem = config["mem"]["eggnog"],
         time = config["runtime"]["eggnog"]
     threads:
-        config["threads"]
+        config.get("threads_eggnog", config['threads'])
+    benchmark:
+        "{folder}/logs/benchmark/eggNOG_homology_search_diamond/{prefix}.log"
     conda:
         "../envs/eggNOG.yaml"
     log:
@@ -102,13 +104,15 @@ rule eggNOG_annotation:
         data_dir = EGGNOG_DIR,
         prefix = "{folder}/{prefix}"
     threads:
-        config["threads"]
+        config.get("threads_eggnog", config['threads'])
     resources:
         mem=20
     conda:
         "../envs/eggNOG.yaml"
     log:
         "{folder}/logs/{prefix}/eggNOG_annotate_hits_table.log"
+    benchmark:
+        "{folder}/logs/benchmark/eggNOG_annotate_hits_table/{prefix}.log"
     shell:
         """
         emapper.py --annotate_hits_table {input.seed} --no_file_comments --usemem \

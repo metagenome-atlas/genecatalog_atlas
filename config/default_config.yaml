@@ -1,4 +1,5 @@
 threads: 8
+threads_eggnog: 8
 mem:
   default: 250
   low: 20
