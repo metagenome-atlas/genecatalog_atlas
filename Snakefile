@@ -7,6 +7,7 @@ report: "report/workflow.rst"
 
 # Allow users to fix the underlying OS via singularity.
 singularity: "docker://continuumio/miniconda3"
+configfile: os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"config/default_config.yaml")
 
 
 rule cluster:
@@ -29,7 +30,6 @@ sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)
 import utils
 
 
-configfile: os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"config/default_config.yaml")
 
 
 DBDIR = os.path.realpath(config["database_dir"])

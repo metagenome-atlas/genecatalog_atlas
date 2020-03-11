@@ -23,7 +23,7 @@ subclusterids:
 
 compare_catalogs:
   gc90: "genecatalog/subcluster/gc90.fasta"
-  gc50: "genecatalog/subcluster/gc50.fasta"
+#  gc50: "genecatalog/subcluster/gc50.fasta"
 
 query: "gc90"
 
