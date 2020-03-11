@@ -55,12 +55,13 @@ rule createtsv:
         "logs/genecatalog/compare/createtsv_{query}_{target}.log"
     threads:
         1
+    resources:
+        mem=config['mem']['low'],
     conda:
         "../envs/mmseqs.yaml"
     shell:
         "  mmseqs createtsv {input.query}/db {input.target}/db {input.resultdb}/db "
         "{output} "
-        "--threads {threads} "
         " > {log}"
 
 localrules: filter
