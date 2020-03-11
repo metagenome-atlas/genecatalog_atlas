@@ -64,7 +64,7 @@ rule createtsv:
         "{output} "
         " > {log}"
 
-localrules: filter
+
 rule filter:
     input:
         rules.createtsv.output[0]
@@ -72,6 +72,10 @@ rule filter:
         "genecatalog/comparisons/{query}-{target}/filtered_results.tsv"
     params:
         id_treshold=config['compare_id']
+    threads:
+        1
+    resources:
+        mem=config['mem']['low'],
     run:
         with open(input[0]) as fin, open(output[0],'w') as fout:
             for line in fin:
