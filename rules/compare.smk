@@ -57,6 +57,7 @@ rule createtsv:
         1
     resources:
         mem=config['mem']['low'],
+        time=config['runtime']['long']
     conda:
         "../envs/mmseqs.yaml"
     shell:
