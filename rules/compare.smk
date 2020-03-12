@@ -55,6 +55,8 @@ rule createtsv:
         "logs/genecatalog/compare/createtsv_{query}_{target}.log"
     threads:
         1
+    shadow:
+        "minimal"
     resources:
         mem=config['mem']['low'],
         time=config['runtime']['long']
