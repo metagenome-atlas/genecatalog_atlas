@@ -26,3 +26,4 @@ scripts/.snakemake*
 !.test/input_catalog.faa
 !config/
 !config/*
+!annotate.smk

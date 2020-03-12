@@ -1,25 +1,12 @@
-# The main entry point of your workflow.
-# After configuring, running snakemake -n in a clone of this repository should successfully execute a dry-run of the workflow.
-
 import os
 
-report: "report/workflow.rst"
+
 
 # Allow users to fix the underlying OS via singularity.
 singularity: "docker://continuumio/miniconda3"
 configfile: os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"config/default_config.yaml")
 
 
-rule cluster:
-    input:
-        "genecatalog/gene_catalog.faa",
-        "genecatalog/clustering/renamed_genenames.tsv.gz",
-        "genecatalog/clustering/orf2gene.tsv.gz"
-
-rule subcluster:
-    input:
-        expand("genecatalog/subcluster/gc{id}.fasta",id=config['subclusterids']),
-        expand("genecatalog/clustering/gene2gc{id}.tsv.gz",id=config['subclusterids'])
 
 rule annotate:
     input:
@@ -32,11 +19,13 @@ import utils
 
 
 
+DBDIR = os.path.realpath(config["database_dir"])
+EGGNOG_DIR = os.path.join(DBDIR,'EggNOGV2')
 
 
-include: "rules/clustering.smk"
 
-include: "rules/compare.smk"
+include: "rules/eggNOG.smk"
+
 
 
 ## add default resources
