@@ -141,8 +141,8 @@ rule rename_mapping:
     output:
         "genecatalog/clustering/orf2gene.tsv.gz",
     resources:
-        #time=config['runtime']['long'],
-        mem=config['mem']['low']
+        time=2,
+        mem=1
     benchmark:
         "logs/benchmarks/rename_mapping.tsv"
     threads:
@@ -180,7 +180,7 @@ rule rename_mapping:
 
             orf2gene.map(name_mapping).to_csv(output[0],sep='\t',header=write_header,mode='a')
             write_header=False
-            
+
             chuncknr+=1
             print(f"processed chunck {chuncknr}")
 
