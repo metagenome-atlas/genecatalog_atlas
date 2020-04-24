@@ -13,11 +13,11 @@ configfile: os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"c
 rule cluster:
     input:
         "genecatalog/gene_catalog.faa",
-        "genecatalog/clustering/renamed_genenames.tsv.gz",
         "genecatalog/clustering/orf2gene.tsv.gz"
 
 rule subcluster:
     input:
+        "genecatalog/clustering/orf2gene.tsv.gz",
         expand("genecatalog/subcluster/gc{id}.fasta",id=config['subclusterids']),
         expand("genecatalog/clustering/gene2gc{id}.tsv.gz",id=config['subclusterids'])
 
