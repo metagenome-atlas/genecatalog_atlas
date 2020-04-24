@@ -147,6 +147,8 @@ rule rename_mapping:
         1
     log:
         "logs/genecatalog/clustering/rename_mapping_clusters.log"
+    shadow:
+        "minimal"
     run:
 
 
