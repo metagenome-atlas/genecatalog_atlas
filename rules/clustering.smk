@@ -141,8 +141,10 @@ rule rename_mapping:
     output:
         "genecatalog/clustering/orf2gene.tsv.gz",
     resources:
-        time=config['runtime']['long'],
+        #time=config['runtime']['long'],
         mem=config['mem']['low']
+    benchmark:
+        "logs/benchmarks/rename_mapping.tsv"
     threads:
         1
     log:
@@ -150,7 +152,9 @@ rule rename_mapping:
     shadow:
         "minimal"
     run:
-
+        import sys
+        sys.stdout= open(log[0],"w")
+        sys.stderr= open(log[0],"a")
 
         import pandas as pd
 
@@ -159,6 +163,7 @@ rule rename_mapping:
 
         # read cluster mapping in chuncks
         write_header=True
+        chuncknr= 0
         for orf2gene in pd.read_csv(input.cluster_mapping,
                                     usecols=[0,1], #  clustermaping can have a tailing tab character leading to a
                                    index_col=1, # the format is "{cluster}\t{orf}"
@@ -175,6 +180,9 @@ rule rename_mapping:
 
             orf2gene.map(name_mapping).to_csv(output[0],sep='\t',header=write_header,mode='a')
             write_header=False
+            
+            chuncknr+=1
+            print(f"processed chunck {chuncknr}")
 
 
 #### SUBCLUSTERING ####
