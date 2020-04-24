@@ -117,7 +117,7 @@ rule rename_gene_catalog:
         log= "logs/genecatalog/clustering/cluster_proteins.log"
     output:
         faa= "genecatalog/gene_catalog.faa",
-        name_mapping = "genecatalog/clustering/renamed_genenames.tsv.gz",
+        name_mapping = temp("genecatalog/clustering/renamed_genenames.tsv.gz"),
     shadow: "minimal"
     benchmark:
         "logs/benchmarks/rename_catalog.tsv"
