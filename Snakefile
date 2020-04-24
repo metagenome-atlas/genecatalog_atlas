@@ -21,9 +21,7 @@ rule subcluster:
         expand("genecatalog/subcluster/gc{id}.fasta",id=config['subclusterids']),
         expand("genecatalog/clustering/gene2gc{id}.tsv.gz",id=config['subclusterids'])
 
-rule annotate:
-    input:
-        "genecatalog/annotations/eggNog.tsv.gz"
+
 
 # add scripts
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
@@ -37,7 +35,6 @@ import utils
 include: "rules/clustering.smk"
 
 include: "rules/compare.smk"
-
 
 ## add default resources
 for r in workflow.rules:

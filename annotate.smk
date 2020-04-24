@@ -10,7 +10,7 @@ configfile: os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"c
 
 rule annotate:
     input:
-        "genecatalog/annotations/eggNog.h5"
+        "genecatalog/annotations/eggNog.tsv.gz"
 
 # add scripts
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"scripts"))
