@@ -9,6 +9,31 @@ FILES = {"eggnog.db": "7923d3bb7eca8e0e8f122be4b5ca6997",
          "eggnog_proteins.dmnd": "64fefa838833a6f3e220a06fb9d403cd"
          }
 
+EGGNOG_HEADER = [
+    "Query",
+    "Target",
+    "evalue",
+    "score",
+    "Taxonomy",
+    "Protein_name",
+    "GO_terms",
+    "EC",
+    "KO",
+    "KEGG_Pathway",
+    "KEGG_Module",
+    "KEGG_Reaction",
+    "KEGG_rclass",
+    "BRITE",
+    "KEGG_TC",
+    "CAZy",
+    "BiGG_Reaction",
+    "tax_scope",
+    "EggNog",
+    "depricated_bestOG",
+    "FunctionalCategory",
+    "Description"
+                ]
+
 
 def get_eggnog_db_file():
     return ancient(expand("{path}/{files}",
@@ -119,6 +144,18 @@ rule eggNOG_annotation:
             --override -o {params.prefix} --cpu {threads} --data_dir {params.data_dir} 2> {log}
         """
 
+localrules: add_eggNOG_header
+rule add_eggNOG_header:
+    input:
+        "{folder}/{prefix}.emapper.annotations"
+    output:
+        "{folder}/{prefix}.eggNOG.tsv.gz"
+    run:
+        import pandas as pd
+
+        D = pd.read_csv(input[0], header=None,sep='\t')
+        D.columns = EGGNOG_HEADER
+        D.to_csv(output[0],sep='\t')
 
 
 localrules: gene_subsets,combine_egg_nogg_annotations
@@ -137,26 +174,15 @@ checkpoint gene_subsets:
 def combine_genecatalog_annotations_input(wildcards):
     dir_for_subsets = checkpoints.gene_subsets.get(**wildcards).output[0]
     Subset_names,= glob_wildcards(os.path.join(dir_for_subsets, "{subset}.faa"))
-    return expand("genecatalog/subsets/genes/{subset}.emapper.annotations",
+    return expand("genecatalog/subsets/genes/{subset}.eggNOG.tsv.gz",
                   subset=Subset_names)
 
 rule combine_egg_nogg_annotations:
     input:
         combine_genecatalog_annotations_input
     output:
-        temp("genecatalog/annotations/eggNog.emapper.annotations")
-    shell:
-        "cat {input} > {output}"
-
-localrules: add_eggNOG_header
-rule add_eggNOG_header:
-    input:
-        "genecatalog/annotations/eggNog.emapper.annotations"
-    output:
-        "genecatalog/annotations/eggNog.h5"
+        "genecatalog/annotations/eggNog.tsv.gz"
     run:
-        import pandas as pd
+        from utils.io import pandas_concat
 
-        D = pd.read_csv(input[0], header=None,sep='\t')
-        D.columns = EGGNOG_HEADER
-        D.to_hdf(output[0],'eggnog',complib='bzip2',complevel=5)
+        pandas_concat(input,output[0])
