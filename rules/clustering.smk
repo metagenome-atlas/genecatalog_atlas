@@ -140,6 +140,8 @@ rule rename_mapping:
         cluster_mapping ="genecatalog/clustering/cluster_attribution.tsv"
     output:
         "genecatalog/clustering/orf2gene.tsv.gz",
+    params:
+        headers = ('ORF','Gene')
     resources:
         time=2,
         mem=1
@@ -151,38 +153,9 @@ rule rename_mapping:
         "logs/genecatalog/clustering/rename_mapping_clusters.log"
     shadow:
         "minimal"
-    run:
-        import sys
-        sys.stdout= open(log[0],"w")
-        sys.stderr= open(log[0],"a")
+    script:
+        "../scripts/rename_mapping.py"
 
-        import pandas as pd
-
-        name_mapping= pd.read_csv(input.name_mapping,index_col=0,sep='\t',squeeze=True)
-        assert type(name_mapping)==pd.Series
-
-        # read cluster mapping in chuncks
-        write_header=True
-        chuncknr= 0
-        for orf2gene in pd.read_csv(input.cluster_mapping,
-                                    usecols=[0,1], #  clustermaping can have a tailing tab character leading to a
-                                   index_col=1, # the format is "{cluster}\t{orf}"
-                                   squeeze=True,
-                                   header=None,
-                                   sep='\t',
-                                   chunksize=1e7):
-
-            assert type(orf2gene)==pd.Series
-            orf2gene.name='Gene'
-            orf2gene.index.name = 'ORF'
-
-        # map gene representative name to gene id, write to file with header only once
-
-            orf2gene.map(name_mapping).to_csv(output[0],sep='\t',header=write_header,mode='a')
-            write_header=False
-
-            chuncknr+=1
-            print(f"processed chunck {chuncknr}")
 
 
 #### SUBCLUSTERING ####
@@ -300,35 +273,24 @@ rule get_subcluster_mapping_original:
         mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
         """
 
+
+
 rule rename_subcluster_mapping:
     input:
         name_mapping = "genecatalog/clustering/GC{id}_name_mapping.tsv",
         cluster_mapping ="genecatalog/clustering/GC{id}_cluster_attribution.tsv"
     output:
         "genecatalog/clustering/gene2gc{id}.tsv.gz",
-    resources:
-        time=config['runtime']['long'],
-        mem=config['mem']['low']
     threads:
         1
     log:
         "logs/genecatalog/clustering/GC{id}_rename_mapping_clusters.log"
-    run:
-
-
-        import pandas as pd
-
-        name_mapping= pd.read_csv(input.name_mapping,index_col=0,sep='\t',squeeze=True)
-
-        gene2gc= pd.read_csv(input.cluster_mapping,index_col=1,header=None,squeeze=True,sep='\t')
-
-        assert type(name_mapping)==pd.Series
-        assert type(gene2gc)==pd.Series
-
-        gene2gc=pd.Series(index=gene2gc.index, data=name_mapping.loc[gene2gc.values].values,
-                          name='GC{id}'.format(**wildcards)).sort_index()
-
-        gene2gc.index.name='Gene'
-
-
-        gene2gc.to_csv(output[0],sep='\t',header=True)
+    params:
+        headers = lambda wc: ('Gene',f'GC{wc.id}')
+    resources:
+        time=2,
+        mem=1
+    shadow:
+        "minimal"
+    script:
+        "../scripts/rename_mapping.py"
