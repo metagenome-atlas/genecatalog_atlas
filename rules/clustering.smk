@@ -154,13 +154,25 @@ rule rename_mapping:
 
         name_mapping= pd.read_csv(input.name_mapping,index_col=0,sep='\t',squeeze=True)
 
-        gene2gc= pd.read_csv(input.cluster_mapping,index_col=1,header=None,squeeze=True,sep='\t')
+        # read cluster mapping in chuncks
+        # clustermaping has the format "cluster    orf"
 
-        gene2gc=gene2gc.map(name_mapping).sort_index()
-        gene2gc.index.name='ORF'
-        gene2gc.name='Gene'.format(**wildcards)
+        write_header=True
+        for orf2gene in pd.read_csv(input.cluster_mapping,
+                                   index_col=1,
+                                   header=None,
+                                   squeeze=True,
+                                   sep='\t',
+                                   chunksize=1e3):
 
-        gene2gc.to_csv(output[0],sep='\t',header=True)
+
+            orf2gene.name='Gene'
+            orf2gene.index.name = 'ORF'
+
+        # map gene representative name to gene id, write to file with header only once
+
+            orf2gene.map(name_mapping).to_csv(output[0],sep='\t',header=write_header,mode='a')
+            write_header=False
 
 
 #### SUBCLUSTERING ####
