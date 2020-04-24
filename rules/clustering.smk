@@ -153,19 +153,19 @@ rule rename_mapping:
         import pandas as pd
 
         name_mapping= pd.read_csv(input.name_mapping,index_col=0,sep='\t',squeeze=True)
+        assert type(name_mapping)==pd.Series
 
         # read cluster mapping in chuncks
-        # clustermaping has the format "cluster    orf"
-
         write_header=True
         for orf2gene in pd.read_csv(input.cluster_mapping,
-                                   index_col=1,
-                                   header=None,
+                                    usecols=[0,1], #  clustermaping can have a tailing tab character leading to a
+                                   index_col=1, # the format is "{cluster}\t{orf}"
                                    squeeze=True,
+                                   header=None,
                                    sep='\t',
-                                   chunksize=1e3):
+                                   chunksize=1e7):
 
-
+            assert type(orf2gene)==pd.Series
             orf2gene.name='Gene'
             orf2gene.index.name = 'ORF'
 
