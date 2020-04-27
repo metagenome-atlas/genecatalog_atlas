@@ -146,7 +146,7 @@ rule rename_mapping:
         time=2,
         mem=1
     benchmark:
-        "logs/benchmarks/rename_mapping.tsv"
+        "logs/benchmarks/genecatalog/clustering/rename_mapping.tsv"
     threads:
         1
     log:
@@ -285,11 +285,13 @@ rule rename_subcluster_mapping:
         1
     log:
         "logs/genecatalog/clustering/GC{id}_rename_mapping_clusters.log"
+    benchmark:
+        "logs/benchmarks/genecatalog/clustering/rename_mapping_GC{id}.tsv"
     params:
         headers = lambda wc: ('Gene',f'GC{wc.id}')
     resources:
         time=2,
-        mem=1
+        mem=5
     shadow:
         "minimal"
     script:
