@@ -7,25 +7,36 @@ import pandas as pd
 name_mapping= pd.read_csv(snakemake.input.name_mapping,index_col=0,sep='\t',squeeze=True)
 assert type(name_mapping)==pd.Series
 
-# read cluster mapping in chuncks
-write_header=True
-chuncknr= 0
-for orf2gene in pd.read_csv(snakemake.input.cluster_mapping,
-                            usecols=[0,1], #  clustermaping can have a tailing tab character leading to a
-                           index_col=1, # the format is "{cluster}\t{orf}"
-                           squeeze=True,
-                           header=None,
-                           sep='\t',
-                           chunksize=1e7):
 
-    assert type(orf2gene)==pd.Series
-    orf2gene.name=snakemake.params.headers[1]
-    orf2gene.index.name = snakemake.params.headers[0]
 
-# map gene representative name to gene id, write to file with header only once
+with pd.HDFStore(snakemake.output[0],complevel=3, mode='w') as store:
 
-    orf2gene.map(name_mapping).to_csv(snakemake.output[0],sep='\t',header=write_header,mode='a')
-    write_header=False
+    # read cluster mapping in chuncks
+    chuncknr= 0
+    for orf2gene in pd.read_csv(snakemake.input.cluster_mapping,
+                                usecols=[0,1], #  clustermaping can have a tailing tab character leading to a
+                               index_col=1, # the format is "{cluster}\t{orf}"
+                               squeeze=True,
+                               header=None,
+                               sep='\t',
+                               dtype={0:'category'},
+                               chunksize=1e7
+        ):
 
-    chuncknr+=1
-    print(f"processed chunck {chuncknr}")
+
+        orf2gene.cat.set_categories(name_mapping,
+                                    inplace=True,
+                                    rename=True,
+                                    ordered=True)
+
+
+
+        orf2gene.name=snakemake.params.headers[1]
+        orf2gene.index.name = snakemake.params.headers[0]
+        key= '/'.join(snakemake.params.headers)
+
+    # map gene representative name to gene id, write to file with header only once
+        store.append(key, orf2gene, format='table', data_columns=[orf2gene.name])
+
+        chuncknr+=1
+        print(f"processed chunck {chuncknr}")

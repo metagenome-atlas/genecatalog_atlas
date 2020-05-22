@@ -139,7 +139,7 @@ rule rename_mapping:
         name_mapping = "genecatalog/clustering/renamed_genenames.tsv.gz",
         cluster_mapping ="genecatalog/clustering/cluster_attribution.tsv"
     output:
-        "genecatalog/clustering/orf2gene.tsv.gz",
+        "genecatalog/clustering/orf2gene.h5",
     params:
         headers = ('ORF','Gene')
     resources:
@@ -151,6 +151,8 @@ rule rename_mapping:
         1
     log:
         "logs/genecatalog/clustering/rename_mapping_clusters.log"
+    conda:
+        "../envs/hdf.yaml"
     shadow:
         "minimal"
     script:
@@ -280,7 +282,7 @@ rule rename_subcluster_mapping:
         name_mapping = "genecatalog/clustering/GC{id}_name_mapping.tsv",
         cluster_mapping ="genecatalog/clustering/GC{id}_cluster_attribution.tsv"
     output:
-        "genecatalog/clustering/gene2gc{id}.tsv.gz",
+        "genecatalog/clustering/gene2gc{id}.h5",
     threads:
         1
     log:
@@ -294,5 +296,7 @@ rule rename_subcluster_mapping:
         mem=5
     shadow:
         "minimal"
+    conda:
+        "../envs/hdf.yaml"
     script:
         "../scripts/rename_mapping.py"
