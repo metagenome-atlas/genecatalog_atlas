@@ -1,6 +1,8 @@
 import pandas as pd
 import utils
 import sys
+
+import gzip as
 sys.stdout= open(snakemake.log[0],"w")
 sys.stderr= open(snakemake.log[0],"a")
 
@@ -12,7 +14,7 @@ def rename_fasta(fasta_in,fasta_out,new_names):
     old_names=[]
     n=0
 
-    with open(fasta_in) as fin, open(fasta_out,'w') as fout:
+    with open(fasta_in) as fin, gz.open(fasta_out,'wt') as fout:
         for line in fin:
             if line[0]=='>':
 

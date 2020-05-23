@@ -36,6 +36,8 @@ include: "rules/clustering.smk"
 
 include: "rules/compare.smk"
 
+include: "annotate.smk"
+
 ## add default resources
 for r in workflow.rules:
     if not "mem" in r.resources:

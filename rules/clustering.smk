@@ -3,16 +3,16 @@ import os
 localrules: input_genes
 rule input_genes:
     input:
-        faa= os.path.abspath(config['input_faa'])
+        faa= os.path.abspath(config['input_faagz'])
     output:
-        faa= temp("genecatalog/input.faa")
+        faa= temp("genecatalog/input.faa.gz")
     shell:
         "ln -s {input} {output}"
 
 
 rule createdb:
     input:
-        "genecatalog/{catalogname}.faa"
+        "genecatalog/{catalogname}.faa.gz"
     output:
         temp(directory("genecatalog/{catalogname}_mmseqdb"))
     threads:
@@ -116,7 +116,7 @@ rule rename_gene_catalog:
         faa= "genecatalog/representatives_of_clusters.fasta",
         log= "logs/genecatalog/clustering/cluster_proteins.log"
     output:
-        faa= "genecatalog/gene_catalog.faa",
+        faa= "genecatalog/gene_catalog.faa.gz",
         name_mapping = temp("genecatalog/clustering/renamed_genenames.tsv.gz"),
     shadow: "minimal"
     benchmark:
@@ -233,7 +233,7 @@ rule rename_subcluster_catalog:
         faa= "genecatalog/subcluster/GC{id}_representatives.fasta",
         log= "logs/genecatalog/subcluster/cluster_{id}.log"
     output:
-        faa= "genecatalog/subcluster/gc{id}.fasta",
+        faa= "genecatalog/subcluster/gc{id}.faa.gz",
         name_mapping = temp("genecatalog/clustering/GC{id}_name_mapping.tsv"),
     shadow: "minimal"
     benchmark:
