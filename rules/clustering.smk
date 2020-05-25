@@ -100,7 +100,7 @@ rule get_mapping_original:
     benchmark:
         "logs/benchmarks/get_mapping_original.tsv"
     resources:
-        time=config['runtime']['long'],
+        time=config['runtime']['short'],
         mem=config['mem']['low']
     threads:
         1
@@ -122,7 +122,7 @@ rule rename_gene_catalog:
     benchmark:
         "logs/benchmarks/rename_catalog.tsv"
     resources:
-        time=config['runtime']['long'],
+        time=config['runtime']['short'],
         mem=config['mem']['low']
     threads:
         1
@@ -143,8 +143,8 @@ rule rename_mapping:
     params:
         headers = ('ORF','Gene')
     resources:
-        time=2,
-        mem=1
+        time=config['runtime']['short'],
+        mem=config['mem']['low']
     benchmark:
         "logs/benchmarks/genecatalog/clustering/rename_mapping.tsv"
     threads:
