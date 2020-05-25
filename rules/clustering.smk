@@ -239,7 +239,7 @@ rule rename_subcluster_catalog:
     benchmark:
         "logs/benchmarks/GC{id}_rename_gene_clusters.tsv"
     resources:
-        time=config['runtime']['long'],
+        time=config['runtime']['short'],
         mem=config['mem']['low']
     threads:
         1
@@ -266,7 +266,7 @@ rule get_subcluster_mapping_original:
     benchmark:
         "logs/benchmarks/GC{id}_get_mapping_original.tsv"
     resources:
-        time=config['runtime']['long'],
+        time=config['runtime']['short'],
         mem=config['mem']['low']
     threads:
         1
@@ -292,8 +292,8 @@ rule rename_subcluster_mapping:
     params:
         headers = lambda wc: ('Gene',f'GC{wc.id}')
     resources:
-        time=2,
-        mem=5
+        time=config['runtime']['short'],
+        mem=config['mem']['low']
     shadow:
         "minimal"
     conda:
