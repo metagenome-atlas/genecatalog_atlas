@@ -12,7 +12,7 @@ rule all:
                                                       id= config['compare_id']
                                                       )
 
-rule createdb_compare:
+rule createdb:
     input:
         list(config['compare_catalogs'].values())
     output:
@@ -31,7 +31,7 @@ rule createdb_compare:
 
 
 
-rule compare_genes:
+rule cluster_genes:
     input:
         db="genecatalog/compare/{comparison}_mmseqdb"
     output:
@@ -61,7 +61,7 @@ rule compare_genes:
 
 
 
-rule get_mapping_compare:
+rule get_mapping_original:
     input:
         db= rules.compare_genes.input.db,
         clusterdb = rules.compare_genes.output.clusterdb,
