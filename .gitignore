@@ -27,3 +27,4 @@ scripts/.snakemake*
 !config/
 !config/*
 !annotate.smk
+!compare.smk
