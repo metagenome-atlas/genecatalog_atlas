@@ -22,9 +22,9 @@ subclusterids:
   - 90
   - 50
 
-compare_catalogs:
-  genecatalog: "genecatalog/gene_catalog.faa"
-  other: "path/to/other.faa"
+# compare_catalogs:
+#   genecatalog: "genecatalog/gene_catalog.faa"
+#   other: "path/to/other.faa"
 
 
 compare_id: 1

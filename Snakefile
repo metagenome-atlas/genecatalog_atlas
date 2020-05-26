@@ -34,7 +34,7 @@ import utils
 
 include: "rules/clustering.smk"
 
-include: "rules/compare.smk"
+
 
 ## add default resources
 for r in workflow.rules:
