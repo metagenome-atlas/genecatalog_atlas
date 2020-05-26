@@ -3,27 +3,28 @@ import os
 configfile: os.path.join(os.path.dirname(os.path.abspath(workflow.snakefile)),"config/default_config.yaml")
 
 
-compare_output_file= "genecatalog/compare/"+ "_".join(config['compare_catalogs'].keys()) +".tsv"
-
 
 
 rule all:
     input:
-        compare_output_file
+        "genecatalog/compare/{comparison}_id{id}.tsv".format(comparison=
+                                                      "_".join(config['compare_catalogs'].keys()),
+                                                      id= config['compare_id']
+                                                      )
 
 rule createdb_compare:
     input:
         list(config['compare_catalogs'].values())
     output:
-        temp(directory("genecatalog/compare_mmseqdb"))
+        temp(directory("genecatalog/compare/{comparison}_mmseqdb"))
     threads:
         1
     conda:
         "../envs/mmseqs.yaml"
     log:
-        "logs/genecatalog/make_db/compare.log"
+        "logs/genecatalog/make_db/compare_{comparison}.log"
     benchmark:
-        "logs/benchmarks/createdb/compare.tsv"
+        "logs/benchmarks/createdb/compare_{comparison}.tsv"
     shell:
         "mkdir {output} 2> {log} ; "
         "mmseqs createdb {input} {output}/db >> {log} 2>> {log} "
@@ -32,13 +33,13 @@ rule createdb_compare:
 
 rule compare_genes:
     input:
-        db="genecatalog/compare_mmseqdb"
+        db="genecatalog/compare/{comparison}_mmseqdb"
     output:
-        clusterdb = temp(directory("genecatalog/clustering_compare/mmseqs"))
+        clusterdb = temp(directory("genecatalog/compare/mmseqs_{comparison}"))
     conda:
         "envs/mmseqs.yaml"
     log:
-        "logs/genecatalog/compare/cluster_proteins.log"
+        "logs/genecatalog/compare/cluster_proteins/{comparison}.log"
     threads:
         config["threads"]
     params:
@@ -65,13 +66,11 @@ rule get_mapping_compare:
         db= rules.compare_genes.input.db,
         clusterdb = rules.compare_genes.output.clusterdb,
     output:
-        cluster_attribution = compare_output_file,
+        cluster_attribution = "genecatalog/compare/{comparison}.tsv",
     conda:
         "envs/mmseqs.yaml"
     log:
-        "logs/genecatalog/compare/get_mapping.log"
-    benchmark:
-        "logs/benchmarks/get_mapping_compare.tsv"
+        "logs/genecatalog/compare/get_mapping_{comparison}.log"
     resources:
         time=config['runtime']['long'],
         mem=config['mem']['low']
