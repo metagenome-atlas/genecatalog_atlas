@@ -23,9 +23,8 @@ subclusterids:
   - 50
 
 compare_catalogs:
-  gc90: "genecatalog/subcluster/gc90.fasta"
-#  gc50: "genecatalog/subcluster/gc50.fasta"
+  genecatalog: "genecatalog/gene_catalog.faa"
+  other: "path/to/other.faa"
 
-query: "gc90"
 
-compare_id: 0.9
+compare_id: 1

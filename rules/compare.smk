@@ -1,86 +1,79 @@
-tempdir="/tmp"
 
 
 
-query = config["query"]
 
-rule search:
+rule createdb_compare:
     input:
-        expand("genecatalog/comparisons/{query}-{target}/filtered_results.tsv",
-               query=query,
-               target= [k for k in config['compare_catalogs'].keys() if k!= query]
-               )
-
-
-localrules: get_data_to_compare
-rule get_data_to_compare:
-    input:
-        lambda wildcards: config['compare_catalogs'][wildcards.catalogname]
+        list(config['compare_catalogs'].values())
     output:
-        temp("genecatalog/{catalogname}.faa")
-    shell:
-        "cp {input} {output}"
-
-rule mmseq_search:
-    input:
-        target='genecatalog/{target}_mmseqdb',
-        query='genecatalog/{query}_mmseqdb',
-    output:
-        db=directory("genecatalog/comparisons/{query}-{target}/mmseqdb"),
-    params:
-        s=0.9,
-        tmpdir= temp(directory(os.path.join(tempdir,"mmseqs_search")))
-    conda:
-        "../envs/mmseqs.yaml"
-    threads:
-        config['threads']
-    log:
-        "logs/genecatalog/compare/search_{query}_{target}.txt"
-    shell:
-        "mkdir {output} {params.tmpdir} 2> {log};  "
-        "mmseqs createindex {input.target}/db {params.tmpdir} >> {log} ;"
-        "mmseqs search -s {params.s} "
-        " --threads {threads} "
-        "{input.query}/db {input.target}/db {output.db}/db {params.tmpdir} >> {log}"
-
-#targetID  alnScore  seqIdentity  eVal  qStart  qEnd  qLen  tStart  tEnd  tLen
-rule createtsv:
-    input:
-        target='genecatalog/{target}_mmseqdb',
-        query='genecatalog/{query}_mmseqdb',
-        resultdb= "genecatalog/comparisons/{query}-{target}/mmseqdb",
-    output:
-        "genecatalog/comparisons/{query}-{target}/all_results.tsv",
-    log:
-        "logs/genecatalog/compare/createtsv_{query}_{target}.log"
+        temp(directory("genecatalog/compare_mmseqdb"))
     threads:
         1
-    shadow:
-        "minimal"
-    resources:
-        mem=config['mem']['low'],
-        time=config['runtime']['long']
     conda:
         "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/make_db/compare.log"
+    benchmark:
+        "logs/benchmarks/createdb/compare.tsv"
     shell:
-        "  mmseqs createtsv {input.query}/db {input.target}/db {input.resultdb}/db "
-        "{output} "
-        " > {log}"
+        "mkdir {output} 2> {log} ; "
+        "mmseqs createdb {input} {output}/db >> {log} 2>> {log} "
 
 
-rule filter:
+
+rule compare_genes:
     input:
-        rules.createtsv.output[0]
+        db="genecatalog/compare_mmseqdb"
     output:
-        "genecatalog/comparisons/{query}-{target}/filtered_results.tsv"
+        clusterdb = temp(directory("genecatalog/clustering_compare/mmseqs"))
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/compare/cluster_proteins.log"
+    threads:
+        config["threads"]
     params:
-        id_treshold=config['compare_id']
+        tmpdir= os.path.join(config['tmpdir'],"mmseqs"),
+        clustermethod = 'linclust',
+        coverage=config['coverage'], #0.8,
+        minid=config['compare_id'], # 0.00
+        extra=config['extra'],
+    shell:
+        """
+            mkdir -p {params.tmpdir} {output} 2>> {log}
+
+            mmseqs {params.clustermethod} -c {params.coverage} \
+            --min-seq-id {params.minid} {params.extra} \
+            --threads {threads} {input.db}/db {output.clusterdb}/db {params.tmpdir}  >> {log} 2>> {log}
+
+            rm -fr  {params.tmpdir} 2>> {log}
+        """
+
+
+
+rule get_mapping_compare:
+    input:
+        db= rules.compare_genes.input.db,
+        clusterdb = rules.compare_genes.output.clusterdb,
+    output:
+        cluster_attribution = "genecatalog/compare/"+ "_".join(config['compare_catalogs'].keys()) +".tsv",
+    conda:
+        "../envs/mmseqs.yaml"
+    log:
+        "logs/genecatalog/compare/get_mapping.log"
+    benchmark:
+        "logs/benchmarks/get_mapping_compare.tsv"
+    resources:
+        time=config['runtime']['long'],
+        mem=config['mem']['low']
     threads:
         1
-    resources:
-        mem=config['mem']['low'],
-    run:
-        with open(input[0]) as fin, open(output[0],'w') as fout:
-            for line in fin:
-                if float(line.split('\t')[3]) > params.id_treshold:
-                    fout.write(line)
+    shell:
+        """
+        mmseqs createtsv {input.db}/db {input.db}/db {input.clusterdb}/db {output.cluster_attribution}  > {log} 2>> {log}
+        """
+
+
+rule compare:
+    input:
+        rules.get_mapping_compare.output
