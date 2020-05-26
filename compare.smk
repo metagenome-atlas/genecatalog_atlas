@@ -20,7 +20,7 @@ rule createdb_compare:
     threads:
         1
     conda:
-        "../envs/mmseqs.yaml"
+        "envs/mmseqs.yaml"
     log:
         "logs/genecatalog/make_db/compare_{comparison}.log"
     benchmark:
