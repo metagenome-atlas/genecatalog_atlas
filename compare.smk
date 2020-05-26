@@ -63,8 +63,8 @@ rule cluster_genes:
 
 rule get_mapping_original:
     input:
-        db= rules.compare_genes.input.db,
-        clusterdb = rules.compare_genes.output.clusterdb,
+        db= rules.cluster_genes.input.db,
+        clusterdb = rules.cluster_genes.output.clusterdb,
     output:
         cluster_attribution = "genecatalog/compare/{comparison}.tsv",
     conda:
