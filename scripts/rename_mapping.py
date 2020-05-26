@@ -36,7 +36,8 @@ with pd.HDFStore(snakemake.output[0],complevel=3, mode='w') as store:
         key= '/'.join(snakemake.params.headers)
 
     # map gene representative name to gene id, write to file with header only once
-        store.append(key, orf2gene, format='table', data_columns=[orf2gene.name])
+        store.append(key, orf2gene, format='table', data_columns=[orf2gene.name],
+                     min_itemsize=50)
 
         chuncknr+=1
         print(f"processed chunck {chuncknr}")
