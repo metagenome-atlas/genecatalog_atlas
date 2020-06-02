@@ -88,17 +88,17 @@ rule verify_eggNOG_files:
 # # this rule specifies the more general eggNOG rules
 
 # output with wildcards "{folder}/{prefix}.emapper.tsv"
-
+folder= 'genecatalog/subsets/genes'
 
 rule eggNOG_homology_search:
     input:
         eggnog_db_files=get_eggnog_db_file(),
-        faa = "{folder}/{prefix}.faa",
+        faa = f"{folder}/{{prefix}}.faa",
     output:
-        temp("{folder}/{prefix}.emapper.seed_orthologs"),
+        temp(f"{folder}/{{prefix}}.emapper.seed_orthologs"),
     params:
         data_dir = EGGNOG_DIR,
-        prefix = "{folder}/{prefix}"
+        prefix = f"{folder}/{{prefix}}"
     resources:
         mem = config["mem"]["eggnog"],
         time = config["runtime"]["eggnog"]
@@ -124,10 +124,10 @@ rule eggNOG_annotation:
         eggnog_db_files=get_eggnog_db_file(),
         seed = rules.eggNOG_homology_search.output
     output:
-        temp("{folder}/{prefix}.emapper.annotations")
+        temp(f"{folder}/{{prefix}}.emapper.annotations")
     params:
         data_dir = EGGNOG_DIR,
-        prefix = "{folder}/{prefix}"
+        prefix = f"{folder}/{{prefix}}"
     threads:
         config.get("threads_eggnog", config['threads'])
     resources:
@@ -150,9 +150,9 @@ rule eggNOG_annotation:
 localrules: add_eggNOG_header
 rule add_eggNOG_header:
     input:
-        "{folder}/{prefix}.emapper.annotations"
+        f"{folder}/{{prefix}}.emapper.annotations"
     output:
-        "{folder}/{prefix}.eggNOG.tsv.gz"
+        f"{folder}/{{prefix}}.eggNOG.tsv.gz"
     run:
         import pandas as pd
 
@@ -161,12 +161,13 @@ rule add_eggNOG_header:
         D.to_csv(output[0],sep='\t')
 
 
+
 localrules: gene_subsets,combine_egg_nogg_annotations
 checkpoint gene_subsets:
     input:
         "genecatalog/gene_catalog.faa"
     output:
-        directory("genecatalog/subsets/genes")
+        directory(folder)
     params:
         subset_size=config['SubsetSize'],
     run:
@@ -177,8 +178,8 @@ checkpoint gene_subsets:
 def combine_genecatalog_annotations_input(wildcards):
     dir_for_subsets = checkpoints.gene_subsets.get(**wildcards).output[0]
     Subset_names,= glob_wildcards(os.path.join(dir_for_subsets, "{subset}.faa"))
-    return expand("genecatalog/subsets/genes/{subset}.eggNOG.tsv.gz",
-                  subset=Subset_names)
+    return expand("{folder}/{subset}.eggNOG.tsv.gz",
+                  subset=Subset_names,folder=folder)
 
 rule combine_egg_nogg_annotations:
     input:
