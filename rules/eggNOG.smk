@@ -141,7 +141,7 @@ rule eggNOG_annotation:
         "logs/benchmark/eggNOG/annotate_hits_table/{prefix}.tsv"
     shell:
         """
-        cp {params.data_dir}/eggnog.db > /dev/shm/eggnog.db 2> {log}
+        cp {params.data_dir}/eggnog.db /dev/shm/eggnog.db 2> {log}
 
         emapper.py --annotate_hits_table {input.seed} --no_file_comments \
             --override -o {params.prefix} --cpu {threads} --data_dir /dev/shm/ 2>> {log}
