@@ -105,11 +105,11 @@ rule eggNOG_homology_search:
     threads:
         config.get("threads_eggnog", config['threads'])
     benchmark:
-        "{folder}/logs/benchmark/eggNOG_homology_search_diamond/{prefix}.log"
+        "logs/benchmark/eggNOG/eggNOG_homology_search_diamond/{prefix}.tsv"
     conda:
         "../envs/eggNOG.yaml"
     log:
-        "{folder}/logs/{prefix}/eggNOG_homology_search_diamond.log"
+        "logs/eggNOG/eggNOG_homology_search_diamond/{prefix}.log"
     shell:
         """
         emapper.py -m diamond --no_annot --no_file_comments \
@@ -135,9 +135,9 @@ rule eggNOG_annotation:
     conda:
         "../envs/eggNOG.yaml"
     log:
-        "{folder}/logs/{prefix}/eggNOG_annotate_hits_table.log"
+        "logs/eggNOG/annotate_hits_table/{prefix}.log"
     benchmark:
-        "{folder}/logs/benchmark/eggNOG_annotate_hits_table/{prefix}.log"
+        "logs/benchmark/eggNOG/annotate_hits_table/{prefix}.tsv"
     shell:
         """
         emapper.py --annotate_hits_table {input.seed} --no_file_comments --usemem \
