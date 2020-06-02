@@ -131,7 +131,8 @@ rule eggNOG_annotation:
     threads:
         config.get("threads_eggnog", config['threads'])
     resources:
-        mem=20
+        mem=config['mem']['eggnog'],
+        time = config["runtime"]["eggnog"]
     conda:
         "../envs/eggNOG.yaml"
     log:
@@ -140,8 +141,10 @@ rule eggNOG_annotation:
         "logs/benchmark/eggNOG/annotate_hits_table/{prefix}.tsv"
     shell:
         """
-        emapper.py --annotate_hits_table {input.seed} --no_file_comments --usemem \
-            --override -o {params.prefix} --cpu {threads} --data_dir {params.data_dir} 2> {log}
+        cp {input.eggnog_db_files[0]} > /dev/shm/ 2> {log}
+
+        emapper.py --annotate_hits_table {input.seed} --no_file_comments \
+            --override -o {params.prefix} --cpu {threads} --data_dir /dev/shm/ 2>> {log}
         """
 
 localrules: add_eggNOG_header
