@@ -162,7 +162,7 @@ rule add_eggNOG_header:
 
 
 
-localrules: gene_subsets,combine_egg_nogg_annotations
+localrules: gene_subsets
 checkpoint gene_subsets:
     input:
         "genecatalog/gene_catalog.faa"
