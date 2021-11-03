@@ -42,3 +42,9 @@ for r in workflow.rules:
         r.resources["mem"]=config["mem"]["default"]
     if not "time" in r.resources:
         r.resources["time"]=config["runtime"]["default"]
+        
+        
+    # convert to new units
+    r.resources["mem_mb"] = r.resources["mem"] * 1000
+    r.resources["time_min"] = r.resources["time"] * 60
+
