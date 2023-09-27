@@ -181,6 +181,8 @@ def combine_genecatalog_annotations_input(wildcards):
     return expand("{folder}/{subset}.eggNOG.tsv.gz",
                   subset=Subset_names,folder=folder)
 
+## TODO: read and append, don't store everithing in memory!!
+
 rule combine_egg_nogg_annotations:
     input:
         combine_genecatalog_annotations_input
